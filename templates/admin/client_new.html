@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}New Client — Waypoint{% endblock %}
+{% block content %}
+<a href="{{ url_for('clients.list_clients') }}" style="color:var(--amber); font-size:.85rem; text-decoration:none;">&larr; Clients</a>
+<h2>Add a client</h2>
+<div class="card" style="max-width:520px;">
+  <form method="POST" action="{{ url_for('clients.new_client') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>Company name</label>
+      <input type="text" name="company_name" required placeholder="e.g., Lumo Health">
+    </div>
+    <div class="field">
+      <label>Contact name</label>
+      <input type="text" name="contact_name" placeholder="e.g., Amara Nwosu">
+    </div>
+    <div class="field">
+      <label>Contact email</label>
+      <input type="email" name="contact_email" placeholder="amara@lumohealth.com">
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <textarea name="notes" placeholder="Contract terms, points budget context, anything worth remembering."></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Save client</button>
+  </form>
+</div>
+{% endblock %}

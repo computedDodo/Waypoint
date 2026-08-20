@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Verify — Waypoint{% endblock %}
+{% block brand_tag %}check your inbox{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card auth-card" style="text-align:center;">
+    <h2>Check your inbox</h2>
+    <p style="font-size:.85rem;color:var(--paper-dim);margin:0 0 1.5rem;line-height:1.5;">
+      We sent a verification step to <strong>{{ email }}</strong>.
+      If you got a 6-digit code, enter it below. If you got a link, just click it.
+    </p>
+    <form method="POST" action="{{ url_for('auth.verify_prompt', email=email) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <input type="text" name="otp" placeholder="------" maxlength="6" autocomplete="off"
+          style="text-align:center;font-size:1.4rem;letter-spacing:.4rem;font-family:'IBM Plex Mono',monospace;">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Verify code</button>
+    </form>
+    <a href="{{ url_for('auth.resend_verification', email=email) }}" class="btn btn-outline btn-block" style="margin-top:1rem;">Resend verification</a>
+  </div>
+</div>
+{% endblock %}

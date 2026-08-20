@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Master Ledger — Waypoint{% endblock %}
+{% block content %}
+<h2>Master ledger</h2>
+<div class="card table-wrap">
+  <table>
+    <tr><th>Reviewed (UTC)</th><th>Tester</th><th>Campaign</th><th>Mission</th><th>Points</th></tr>
+    {% for sub in submissions %}
+    <tr>
+      <td style="color:var(--slate);">{{ sub.reviewed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td><strong>@{{ sub.tester.username }}</strong></td>
+      <td>{{ sub.task.campaign.name }}</td>
+      <td>{{ sub.task.title }}</td>
+      <td class="mono" style="color:var(--teal); font-weight:700;">+{{ sub.points_awarded }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="empty-state">No approved missions on record yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

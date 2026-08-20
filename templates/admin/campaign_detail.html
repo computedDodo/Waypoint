@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.name }} — Waypoint{% endblock %}
+{% block content %}
+<a href="{{ url_for('clients.view_client', client_id=campaign.client.id) }}" style="color:var(--amber); font-size:.85rem; text-decoration:none;">&larr; {{ campaign.client.company_name }}</a>
+
+<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; margin-top:.5rem;">
+  <div>
+    <h2 style="margin-bottom:.3rem;">{{ campaign.name }}</h2>
+    <span class="stamp {{ campaign.status|lower|replace(' ', '') }}">{{ campaign.status }}</span>
+  </div>
+  <form method="POST" action="{{ url_for('campaigns.update_status', campaign_id=campaign.id) }}" style="display:flex; gap:.5rem;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <select name="status">
+      {% for s in statuses %}
+      <option value="{{ s }}" {{ 'selected' if s == campaign.status }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-outline btn-sm">Update</button>
+  </form>
+</div>
+
+<div class="stat-row" style="margin-top:1.3rem;">
+  <div class="stat"><div class="num">{{ tasks|length }}</div><div class="lbl">Missions</div></div>
+  <div class="stat"><div class="num">{{ enrolled_count }}</div><div class="lbl">Testers enrolled</div></div>
+  <div class="stat"><div class="num mono">{{ campaign.points_budget }}</div><div class="lbl">Points budget</div></div>
+  <div class="stat"><div class="num mono">{{ proof_file_count }}</div><div class="lbl">Proof files stored</div></div>
+</div>
+
+{% if campaign.status in ended_statuses %}
+<div class="card" style="border-color:var(--amber);">
+  <h3 style="margin-top:0;">Campaign has ended</h3>
+  <p style="font-size:.85rem; color:var(--paper-dim);">
+    Export a full record (CSV + every screenshot) before freeing up space. Purging removes the image
+    files from disk only — points, statuses, and history stay intact.
+  </p>
+  <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+    <a href="{{ url_for('campaigns.export_campaign', campaign_id=campaign.id) }}" class="btn btn-primary">Export (.zip)</a>
+    <form action="{{ url_for('campaigns.purge_proofs', campaign_id=campaign.id) }}" method="POST"
+      onsubmit="return confirm('Delete all screenshot files for this campaign from disk? Make sure you exported first.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger">Purge proof files</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<p class="section-label">Add a mission</p>
+<div class="card">
+  <form method="POST" action="{{ url_for('campaigns.new_task', campaign_id=campaign.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>Title</label>
+      <input type="text" name="title" required placeholder="e.g., Try checkout with an expired card">
+    </div>
+    <div class="field">
+      <label>Instructions</label>
+      <textarea name="description" required placeholder="Steps, prerequisites, device/OS requirements…"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Base points</label><input type="number" name="base_points" min="1" value="50" required></div>
+      <div class="field"><label>Time limit (min)</label><input type="number" name="time_limit_minutes" min="1" value="30" required></div>
+    </div>
+    <button type="submit" class="btn btn-primary">Add mission</button>
+  </form>
+</div>
+
+<p class="section-label">Missions</p>
+{% for task in tasks %}
+{% set is_completed = task.submissions.filter_by(status='Approved').first() %}
+<div class="card ticket">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem;">
+    <div>
+      <strong>{{ task.title }}</strong>
+      <div style="font-size:.78rem; color:var(--slate);">{{ task.time_limit_minutes }} min limit</div>
+    </div>
+    <span class="points-chip">{{ task.base_points }} PTS</span>
+  </div>
+  <p class="preserve-lines" style="font-size:.85rem; color:var(--paper-dim); margin:.6rem 0;">{{ task.description }}</p>
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    {% if is_completed %}
+      <span class="stamp approved">Completed &middot; @{{ is_completed.tester.username }}</span>
+      <span style="font-size:.75rem; color:var(--slate);">Not reopenable from here</span>
+    {% else %}
+      <span class="stamp {{ 'active' if task.is_active else 'draft' }}">{{ 'Published' if task.is_active else 'Hidden' }}</span>
+      <form action="{{ url_for('campaigns.toggle_task', task_id=task.id) }}" method="POST" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline btn-sm">{{ 'Hide' if task.is_active else 'Publish' }}</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<p class="empty-state">No missions yet — add one above.</p>
+{% endfor %}
+{% endblock %}

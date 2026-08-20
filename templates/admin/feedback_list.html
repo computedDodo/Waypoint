@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Feedback Inbox — Waypoint{% endblock %}
+{% block content %}
+<h2>Feedback inbox</h2>
+
+{% for item in items %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem;">
+    <div>
+      <strong>{{ item.subject }}</strong>
+      <div style="font-size:.78rem; color:var(--slate);">
+        {% if item.sender_user %}@{{ item.sender_user.username }} (tester){% elif item.sender_client %}{{ item.sender_client.company_name }} (client){% endif %}
+        &middot; {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
+      </div>
+    </div>
+    <span class="stamp {{ item.status|lower|replace(' ', '') }}">{{ item.status }}</span>
+  </div>
+  <p class="preserve-lines" style="font-size:.85rem; color:var(--paper-dim); margin:.7rem 0;">{{ item.message }}</p>
+
+  {% if item.admin_response %}
+  <div style="background:rgba(0,0,0,0.25); border-left:3px solid var(--teal); padding:.6rem .8rem; border-radius:8px; font-size:.82rem; color:var(--paper-dim); margin-bottom:.9rem;">
+    <strong style="color:var(--teal);">Your response:</strong> <span class="preserve-lines">{{ item.admin_response }}</span>
+  </div>
+  {% endif %}
+
+  <form action="{{ url_for('admin.feedback_respond', feedback_id=item.id) }}" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <textarea name="admin_response" placeholder="Write a response (emailed to them if we have an address)...">{{ item.admin_response or '' }}</textarea>
+    </div>
+    <div style="display:flex; gap:.6rem; align-items:center;">
+      <select name="status" style="flex:1;">
+        <option value="New" {{ 'selected' if item.status == 'New' }}>New</option>
+        <option value="In Progress" {{ 'selected' if item.status == 'In Progress' }}>In Progress</option>
+        <option value="Resolved" {{ 'selected' if item.status == 'Resolved' }}>Resolved</option>
+      </select>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+  </form>
+</div>
+{% else %}
+<p class="empty-state">Inbox is empty.</p>
+{% endfor %}
+{% endblock %}

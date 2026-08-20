@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Join — Waypoint{% endblock %}
+{% block brand_tag %}join a campaign{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <h2>Join the roster</h2>
+    <p style="font-size:.85rem;color:var(--paper-dim);margin:0 0 1.5rem;">Register once, then enroll in whichever campaigns you're invited to.</p>
+    <form method="POST" action="{{ url_for('auth.register') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" name="username" required>
+      </div>
+      <div class="field">
+        <label>Email address</label>
+        <input type="email" name="email" required>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" required minlength="8">
+      </div>
+      <div class="field">
+        <label>Date of birth</label>
+        <input type="date" name="date_of_birth" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Create account</button>
+    </form>
+    <div class="auth-switch">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></div>
+  </div>
+</div>
+{% endblock %}

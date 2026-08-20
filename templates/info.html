@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}How it works — Waypoint{% endblock %}
+{% block content %}
+<div class="card" style="max-width:720px; margin:0 auto;">
+  <a href="{{ url_for('main.index') }}" style="color:var(--amber); font-size:.85rem; text-decoration:none;">&larr; Back to home</a>
+  <h1 style="margin-top:1rem;">How Waypoint works</h1>
+
+  <div class="ticket card" style="margin-top:1.5rem;">
+    <strong>1. Claim a mission</strong>
+    <p style="color:var(--paper-dim); font-size:.88rem;">Sign in, enroll in a campaign you're invited to, and claim an open task. A countdown starts.</p>
+  </div>
+  <div class="ticket card">
+    <strong>2. Execute &amp; capture</strong>
+    <p style="color:var(--paper-dim); font-size:.88rem;">Follow the mission instructions and take a clear screenshot proving what you found or completed.</p>
+  </div>
+  <div class="ticket card">
+    <strong>3. Submit &amp; earn</strong>
+    <p style="color:var(--paper-dim); font-size:.88rem;">Upload before time runs out. Once approved, points land in your wallet and you can redeem them for cash or gift cards.</p>
+  </div>
+
+  <h2 style="margin-top:2rem;" id="privacy">Privacy</h2>
+  <p style="color:var(--paper-dim); font-size:.9rem; line-height:1.6;">
+    We collect your email for authentication and notifications, and screenshots/notes solely to verify mission
+    completion for the client running that campaign. Proof is retained only as long as needed to resolve any
+    dispute, then removed.
+  </p>
+
+  <h2 style="margin-top:2rem;" id="terms">Terms of use</h2>
+  <p style="color:var(--paper-dim); font-size:.9rem; line-height:1.6;">
+    Software you test through Waypoint belongs to the client running that campaign and is confidential. Don't
+    share or publicly post screenshots of unreleased software without written consent. Accounts submitting false
+    proof or breaching confidentiality may be suspended.
+  </p>
+</div>
+{% endblock %}

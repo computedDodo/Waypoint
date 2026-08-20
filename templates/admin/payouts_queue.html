@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Payouts — Waypoint{% endblock %}
+{% block content %}
+<h2>Payout requests</h2>
+<div class="card-grid two">
+  {% for p in payouts %}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <strong>@{{ p.user.username }}</strong>
+        <div style="font-size:.78rem; color:var(--slate);">{{ p.requested_at.strftime('%Y-%m-%d %H:%M') }}</div>
+      </div>
+      <span class="points-chip">{{ p.points_requested }} PTS</span>
+    </div>
+    <p style="font-size:.9rem; margin:.7rem 0;"><strong class="mono">{{ p.cash_value|naira }}</strong> via {{ p.method }}</p>
+    <div style="background:rgba(0,0,0,0.25); border-left:3px solid var(--slate); padding:.6rem .8rem; border-radius:8px; font-size:.82rem; color:var(--paper-dim); margin-bottom:1rem;">
+      {{ p.payout_details }}
+    </div>
+    <form action="{{ url_for('admin.resolve_payout', payout_id=p.id) }}" method="POST" style="display:flex; gap:.6rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" name="action" value="paid" class="btn btn-primary" style="flex:1;">Mark paid</button>
+      <button type="submit" name="action" value="denied" class="btn btn-danger" style="flex:1;">Deny &amp; refund</button>
+    </form>
+  </div>
+  {% else %}
+  <p class="empty-state">No pending payout requests.</p>
+  {% endfor %}
+</div>
+{% endblock %}

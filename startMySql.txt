@@ -1,0 +1,3 @@
+
+
+     mariadbd-safe --skip-grant-tables &

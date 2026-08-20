@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Mission Board — Waypoint{% endblock %}
+{% block brand_tag %}mission board{% endblock %}
+{% block content %}
+<div class="points-banner">
+  <div><div class="label">Wallet balance</div><div class="total">{{ user.wallet_points }} pts</div></div>
+  <div style="display:flex; gap:.5rem;">
+    <a href="{{ url_for('tasks.redeem') }}" class="btn btn-primary btn-sm">Redeem</a>
+    <a href="{{ url_for('tasks.browse_campaigns') }}" class="btn btn-outline btn-sm">Browse</a>
+  </div>
+</div>
+
+{% if current_claim %}
+<div class="card" style="border-color:var(--amber);">
+  <span class="stamp claimed">Active mission</span>
+  <p style="font-size:.9rem; color:var(--paper-dim); margin:.6rem 0;">{{ current_claim.task.title }} — finish before time runs out.</p>
+  <a href="{{ url_for('tasks.submit_proof', submission_id=current_claim.id) }}" class="btn btn-primary btn-block">Go to submission</a>
+</div>
+{% endif %}
+
+{% for campaign, visible_tasks in board %}
+<p class="section-label">{{ campaign.client.company_name }} &middot; {{ campaign.name }}</p>
+{% for entry in visible_tasks %}
+{% set task = entry.task %}
+<div class="card ticket">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem;">
+    <div>
+      <strong>{{ task.title }}</strong>
+      <div style="font-size:.78rem; color:var(--slate);">
+        {{ entry.retry_minutes if entry.retry else task.time_limit_minutes }} min limit
+        {% if entry.retry %}&middot; retry{% endif %}
+      </div>
+    </div>
+    <span class="points-chip">{{ task.base_points }} PTS</span>
+  </div>
+  <p class="preserve-lines" style="font-size:.85rem; color:var(--paper-dim); margin:.6rem 0;">{{ task.description }}</p>
+  {% if entry.retry %}
+  <div class="stamp claimed" style="display:block; text-align:center; margin-bottom:.6rem;">Your retry — shorter time this round</div>
+  {% endif %}
+  {% if not current_claim %}
+  <form action="{{ url_for('tasks.claim_task', task_id=task.id) }}" method="POST" style="margin:0;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-primary btn-block">{{ 'Retry mission' if entry.retry else 'Claim mission' }}</button>
+  </form>
+  {% else %}
+  <button class="btn btn-outline btn-block" disabled>Finish current mission first</button>
+  {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div class="card empty-state">
+  No missions available yet.
+  <div style="margin-top:1rem;"><a href="{{ url_for('tasks.browse_campaigns') }}" class="btn btn-primary">Browse open campaigns</a></div>
+</div>
+{% endfor %}
+{% endblock %}

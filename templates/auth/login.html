@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Sign in — Waypoint{% endblock %}
+{% block brand_tag %}sign in{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <h2>Welcome back</h2>
+    <p style="font-size:.85rem;color:var(--paper-dim);margin:0 0 1.5rem;">Sign in to view your missions.</p>
+    <form method="POST" action="{{ url_for('auth.login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" name="username" required autofocus>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+    </form>
+    <div class="auth-switch"><a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a></div>
+    <div class="auth-switch">Don't have an account? <a href="{{ url_for('auth.register') }}">Register</a></div>
+    <div class="auth-switch"><a href="{{ url_for('main.index') }}">&larr; Back to home</a></div>
+  </div>
+</div>
+{% endblock %}

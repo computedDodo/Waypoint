@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Staff — Waypoint{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+  <h2>Staff</h2>
+  <a href="{{ url_for('admin.new_staff') }}" class="btn btn-primary">+ Invite staff</a>
+</div>
+
+<div class="card table-wrap">
+  <table>
+    <tr><th>Username</th><th>Email</th><th>Role</th><th>Added</th></tr>
+    {% for member in staff %}
+    <tr>
+      <td><strong>{{ member.username }}</strong></td>
+      <td>{{ member.email }}</td>
+      <td>{{ member.role }}</td>
+      <td style="color:var(--slate);">{{ member.created_at.strftime('%Y-%m-%d') }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="empty-state">No staff accounts yet — it's just you.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

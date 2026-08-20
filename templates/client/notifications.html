@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Notifications — Waypoint{% endblock %}
+{% block content %}
+<h2>Notifications</h2>
+{% for r in items %}
+<div class="card ticket">
+  <strong>{{ r.notification.title }}</strong>
+  <p class="preserve-lines" style="font-size:.85rem; color:var(--paper-dim); margin:.5rem 0;">{{ r.notification.body }}</p>
+  <div style="font-size:.75rem; color:var(--slate);">{{ r.notification.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+</div>
+{% else %}
+<p class="empty-state">Nothing yet.</p>
+{% endfor %}
+{% endblock %}

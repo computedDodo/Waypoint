@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Invite Staff — Waypoint{% endblock %}
+{% block content %}
+<a href="{{ url_for('admin.staff_list') }}" style="color:var(--amber); font-size:.85rem; text-decoration:none;">&larr; Staff</a>
+<h2>Invite a staff member</h2>
+<div class="card" style="max-width:480px;">
+  <form method="POST" action="{{ url_for('admin.new_staff') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>Username</label>
+      <input type="text" name="username" required>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" name="email" required>
+    </div>
+    <div class="field">
+      <label>Role</label>
+      <select name="role" required>
+        {% for role in roles %}
+        <option value="{{ role }}">{{ role }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Send invite</button>
+  </form>
+  <p style="font-size:.78rem; color:var(--slate); margin-top:1rem;">
+    They'll get an email with a link to set their own password. Link expires in 48 hours.
+  </p>
+</div>
+{% endblock %}

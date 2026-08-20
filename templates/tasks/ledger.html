@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Ledger — Waypoint{% endblock %}
+{% block content %}
+<h2>Your ledger</h2>
+<div class="card table-wrap">
+  <table>
+    <tr><th>Mission</th><th>Status</th><th>Claimed</th><th>Points</th></tr>
+    {% for item in history %}
+    <tr>
+      <td><strong>{{ item.task.title }}</strong></td>
+      <td><span class="stamp {{ item.status|lower }}">{{ item.status }}</span></td>
+      <td style="color:var(--slate);">{{ item.claimed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td class="mono" style="color:{{ 'var(--teal)' if item.points_awarded > 0 else 'var(--slate)' }}; font-weight:700;">+{{ item.points_awarded }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="empty-state">No activity yet — claim a mission to get started.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

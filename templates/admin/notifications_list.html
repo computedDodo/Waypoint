@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Notifications — Waypoint{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+  <h2>Notifications sent</h2>
+  <a href="{{ url_for('admin.new_notification') }}" class="btn btn-primary">+ Compose</a>
+</div>
+
+{% for n in notifications %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem;">
+    <strong>{{ n.title }}</strong>
+    {% if n.is_automated %}<span class="stamp draft">Automated</span>{% endif %}
+  </div>
+  <p class="preserve-lines" style="font-size:.85rem; color:var(--paper-dim); margin:.5rem 0;">{{ n.body }}</p>
+  <div style="font-size:.75rem; color:var(--slate);">
+    {{ n.audience_type|replace('_', ' ')|title }} &middot; {{ n.recipients.count() }} recipient{{ 's' if n.recipients.count() != 1 }} &middot; {{ n.created_at.strftime('%Y-%m-%d %H:%M') }}
+  </div>
+</div>
+{% else %}
+<p class="empty-state">Nothing sent yet.</p>
+{% endfor %}
+{% endblock %}

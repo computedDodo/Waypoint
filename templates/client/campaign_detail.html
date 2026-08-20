@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.name }} — Waypoint{% endblock %}
+{% block content %}
+<a href="{{ url_for('client_portal.dashboard') }}" style="color:var(--amber); font-size:.85rem; text-decoration:none;">&larr; Dashboard</a>
+
+<div style="margin-top:.5rem;">
+  <h2 style="margin-bottom:.3rem;">{{ campaign.name }}</h2>
+  <span class="stamp {{ campaign.status|lower|replace(' ', '') }}">{{ campaign.status }}</span>
+</div>
+
+<div class="stat-row" style="margin-top:1.3rem;">
+  <div class="stat"><div class="num">{{ tasks|length }}</div><div class="lbl">Missions</div></div>
+  <div class="stat"><div class="num">{{ campaign.enrollments.count() }}</div><div class="lbl">Testers enrolled</div></div>
+</div>
+
+{% if campaign.status in ['Paid Out', 'Suspended', 'Cancelled', 'Archived'] %}
+<div class="card" style="border-color:var(--amber);">
+  <h3 style="margin-top:0;">Campaign has ended</h3>
+  <p style="font-size:.85rem; color:var(--paper-dim);">Download a full record of this campaign — every submission and screenshot.</p>
+  <a href="{{ url_for('client_portal.export_campaign', campaign_id=campaign.id) }}" class="btn btn-primary">Export (.zip)</a>
+</div>
+{% endif %}
+
+<p class="section-label">Missions</p>
+{% for task in tasks %}
+{% set is_completed = task.submissions.filter_by(status='Approved').first() %}
+<div class="card ticket">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <strong>{{ task.title }}</strong>
+      <div style="font-size:.78rem; color:var(--slate);">{{ task.time_limit_minutes }} min limit</div>
+    </div>
+    <span class="points-chip">{{ task.base_points }} PTS</span>
+  </div>
+  <p class="preserve-lines" style="font-size:.85rem; color:var(--paper-dim); margin:.6rem 0;">{{ task.description }}</p>
+  {% if is_completed %}
+    <span class="stamp approved">Completed</span>
+  {% else %}
+    <span class="stamp {{ 'active' if task.is_active else 'draft' }}">{{ 'Published' if task.is_active else 'Hidden' }}</span>
+  {% endif %}
+</div>
+{% else %}
+<p class="empty-state">No missions on this campaign yet.</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Clients — Waypoint{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+  <h2>Clients</h2>
+  <a href="{{ url_for('clients.new_client') }}" class="btn btn-primary">+ New client</a>
+</div>
+
+<div class="card-grid two">
+  {% for client in clients %}
+  <a href="{{ url_for('clients.view_client', client_id=client.id) }}" class="card" style="text-decoration:none;">
+    <h3>{{ client.company_name }}</h3>
+    {% if client.contact_name %}<p style="font-size:.85rem; color:var(--paper-dim); margin:0 0 .3rem;">{{ client.contact_name }}</p>{% endif %}
+    {% if client.contact_email %}<p style="font-size:.8rem; color:var(--slate); margin:0;">{{ client.contact_email }}</p>{% endif %}
+    <p style="font-size:.78rem; color:var(--slate); margin-top:.8rem;">{{ client.campaigns.count() }} campaign{{ 's' if client.campaigns.count() != 1 }}</p>
+  </a>
+  {% else %}
+  <p class="empty-state">No clients yet. Add your first one to start a campaign.</p>
+  {% endfor %}
+</div>
+{% endblock %}

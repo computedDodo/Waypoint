@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Campaigns — Waypoint{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+  <h2>Campaigns</h2>
+  <a href="{{ url_for('campaigns.new_campaign') }}" class="btn btn-primary">+ New campaign</a>
+</div>
+
+<div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1.3rem;">
+  <a href="{{ url_for('campaigns.list_campaigns') }}" class="btn btn-sm {{ 'btn-primary' if not active_status else 'btn-outline' }}">All</a>
+  {% for s in statuses %}
+  <a href="{{ url_for('campaigns.list_campaigns', status=s) }}" class="btn btn-sm {{ 'btn-primary' if active_status == s else 'btn-outline' }}">{{ s }}</a>
+  {% endfor %}
+</div>
+
+<div class="card-grid two">
+  {% for campaign in campaigns %}
+  <a href="{{ url_for('campaigns.view_campaign', campaign_id=campaign.id) }}" class="card" style="text-decoration:none;">
+    <div style="font-size:.72rem; color:var(--slate); text-transform:uppercase; letter-spacing:.06em;">{{ campaign.client.company_name }}</div>
+    <h3 style="margin:.15rem 0 .6rem;">{{ campaign.name }}</h3>
+    <span class="stamp {{ campaign.status|lower|replace(' ', '') }}">{{ campaign.status }}</span>
+    <p style="font-size:.78rem; color:var(--slate); margin-top:.8rem;">{{ campaign.tasks.count() }} mission{{ 's' if campaign.tasks.count() != 1 }} · {{ campaign.enrollments.count() }} enrolled</p>
+  </a>
+  {% else %}
+  <p class="empty-state">No campaigns match that filter.</p>
+  {% endfor %}
+</div>
+{% endblock %}

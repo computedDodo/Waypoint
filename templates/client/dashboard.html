@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Waypoint{% endblock %}
+{% block brand_tag %}{{ client.company_name }}{% endblock %}
+{% block content %}
+<h2>{{ client.company_name }}</h2>
+
+<div class="stat-row">
+  <div class="stat"><div class="num">{{ active_count }}</div><div class="lbl">Active campaigns</div></div>
+  <div class="stat"><div class="num">{{ total_testers }}</div><div class="lbl">Testers involved</div></div>
+  <div class="stat"><div class="num">{{ total_missions }}</div><div class="lbl">Missions created</div></div>
+</div>
+
+<p class="section-label">Your campaigns</p>
+<div class="card-grid two">
+  {% for campaign in campaigns %}
+  <a href="{{ url_for('client_portal.campaign_detail', campaign_id=campaign.id) }}" class="card" style="text-decoration:none;">
+    <h3 style="margin-bottom:.5rem;">{{ campaign.name }}</h3>
+    <span class="stamp {{ campaign.status|lower|replace(' ', '') }}">{{ campaign.status }}</span>
+    <p style="font-size:.78rem; color:var(--slate); margin-top:.8rem;">{{ campaign.tasks.count() }} mission{{ 's' if campaign.tasks.count() != 1 }} &middot; {{ campaign.enrollments.count() }} testers</p>
+  </a>
+  {% else %}
+  <p class="empty-state">No campaigns yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

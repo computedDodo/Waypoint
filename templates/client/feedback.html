@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Feedback — Waypoint{% endblock %}
+{% block content %}
+<h2>Talk to us</h2>
+<div class="card" style="max-width:520px;">
+  <form method="POST" action="{{ url_for('client_portal.feedback') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>Subject</label>
+      <input type="text" name="subject" required placeholder="Question, request, feedback...">
+    </div>
+    <div class="field">
+      <label>Message</label>
+      <textarea name="message" required placeholder="Tell us what's going on."></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Send to admin</button>
+  </form>
+</div>
+
+<p class="section-label">Your history</p>
+{% for item in history %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <strong>{{ item.subject }}</strong>
+    <span class="stamp {{ item.status|lower|replace(' ', '') }}">{{ item.status }}</span>
+  </div>
+  <p class="preserve-lines" style="font-size:.85rem; color:var(--paper-dim); margin:.6rem 0;">{{ item.message }}</p>
+  {% if item.admin_response %}
+  <div style="background:rgba(0,0,0,0.25); border-left:3px solid var(--teal); padding:.6rem .8rem; border-radius:8px; font-size:.82rem; color:var(--paper-dim);">
+    <strong style="color:var(--teal);">Response:</strong> <span class="preserve-lines">{{ item.admin_response }}</span>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<p class="empty-state">No messages sent yet.</p>
+{% endfor %}
+{% endblock %}

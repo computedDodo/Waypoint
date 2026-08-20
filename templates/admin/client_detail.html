@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ client.company_name }} — Waypoint{% endblock %}
+{% block content %}
+<a href="{{ url_for('clients.list_clients') }}" style="color:var(--amber); font-size:.85rem; text-decoration:none;">&larr; Clients</a>
+
+<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; margin-top:.5rem;">
+  <div>
+    <h2 style="margin-bottom:.2rem;">{{ client.company_name }}</h2>
+    {% if client.contact_name or client.contact_email %}
+    <p style="font-size:.85rem; color:var(--paper-dim); margin:0;">
+      {{ client.contact_name }}{% if client.contact_name and client.contact_email %} · {% endif %}{{ client.contact_email }}
+    </p>
+    {% endif %}
+  </div>
+  <a href="{{ url_for('campaigns.new_campaign', client_id=client.id) }}" class="btn btn-primary">+ New campaign</a>
+</div>
+
+{% if client.notes %}
+<div class="card preserve-lines" style="font-size:.85rem; color:var(--paper-dim); margin-top:1rem;">{{ client.notes }}</div>
+{% endif %}
+
+<div class="card" style="margin-top:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem;">
+  <div>
+    <strong style="font-size:.85rem;">Portal access</strong>
+    <p style="font-size:.8rem; color:var(--slate); margin:.2rem 0 0;">
+      {% if client.password_hash %}They've set a password and can sign in.
+      {% elif client.reset_token %}Invite sent, not yet claimed.
+      {% else %}No invite sent yet.{% endif %}
+    </p>
+  </div>
+  <form action="{{ url_for('clients.resend_invite', client_id=client.id) }}" method="POST" style="margin:0;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-outline btn-sm" {{ 'disabled' if not client.contact_email }}>
+      {{ 'Resend invite' if client.reset_token or client.password_hash else 'Send invite' }}
+    </button>
+  </form>
+</div>
+
+<p class="section-label">Campaigns</p>
+<div class="card-grid two">
+  {% for campaign in campaigns %}
+  <a href="{{ url_for('campaigns.view_campaign', campaign_id=campaign.id) }}" class="card" style="text-decoration:none;">
+    <h3 style="margin-bottom:.5rem;">{{ campaign.name }}</h3>
+    <span class="stamp {{ campaign.status|lower|replace(' ', '') }}">{{ campaign.status }}</span>
+    <p style="font-size:.78rem; color:var(--slate); margin-top:.8rem;">{{ campaign.tasks.count() }} mission{{ 's' if campaign.tasks.count() != 1 }} · {{ campaign.enrollments.count() }} enrolled</p>
+  </a>
+  {% else %}
+  <p class="empty-state">No campaigns for this client yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Profile — Waypoint{% endblock %}
+{% block content %}
+<h2>Your profile</h2>
+<div class="card" style="max-width:420px;">
+  <div class="field">
+    <label>Username</label>
+    <input type="text" value="{{ user.username }}" disabled>
+  </div>
+  <div class="field">
+    <label>Email</label>
+    <input type="text" value="{{ user.email }}" disabled>
+  </div>
+  <form method="POST" action="{{ url_for('tasks.profile') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>Date of birth</label>
+      <input type="date" name="date_of_birth" value="{{ user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '' }}" required>
+      <p style="font-size:.75rem; color:var(--slate); margin-top:.4rem;">We'll send you a birthday shout-out on the day 🎉</p>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Save</button>
+  </form>
+</div>
+{% endblock %}

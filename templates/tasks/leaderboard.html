@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard — Waypoint{% endblock %}
+{% block content %}
+<h2>Leaderboard</h2>
+
+{% if enrolled_campaigns|length > 1 %}
+<div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem;">
+  {% for c in enrolled_campaigns %}
+  <a href="{{ url_for('tasks.leaderboard', campaign_id=c.id) }}" class="btn btn-sm {{ 'btn-primary' if selected_campaign and selected_campaign.id == c.id else 'btn-outline' }}">{{ c.name }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if selected_campaign %}
+<p class="section-label">{{ selected_campaign.name }}</p>
+<div class="card table-wrap">
+  <table>
+    <tr><th>Rank</th><th>Tester</th><th>Points</th></tr>
+    {% for tester, points in rows %}
+    <tr>
+      <td style="width:60px;" class="{{ 'rank-1' if loop.index==1 else ('rank-2' if loop.index==2 else ('rank-3' if loop.index==3 else '')) }}">#{{ loop.index }}</td>
+      <td><strong>@{{ tester.username }}</strong></td>
+      <td class="mono" style="color:var(--teal); font-weight:700;">{{ points }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="empty-state">No one's scored yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card empty-state">
+  Join a campaign to see its leaderboard.
+  <div style="margin-top:1rem;"><a href="{{ url_for('tasks.browse_campaigns') }}" class="btn btn-primary">Browse campaigns</a></div>
+</div>
+{% endif %}
+{% endblock %}

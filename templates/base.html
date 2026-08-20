@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Waypoint{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/waypoint.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="{{ url_for('main.index') }}" class="brand">
+      <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 8v8l8 6 8-6V8l-8-6z" stroke="#3A2607" stroke-width="2" stroke-linejoin="round"/></svg></div>
+      <div><div class="brand-name">Waypoint</div><div class="brand-tag">{% block brand_tag %}beta ops, dispatched{% endblock %}</div></div>
+    </a>
+
+    {% if session.user_id and session.role in ['Admin','Reviewer','Finance','Support'] %}
+    <nav class="tabbar" style="position:static;background:none;border:none;padding:0;">
+      <a href="{{ url_for('admin.dashboard') }}" class="{{ 'on' if request.endpoint == 'admin.dashboard' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      {% if has_permission('clients.manage') %}
+      <a href="{{ url_for('clients.list_clients') }}" class="{{ 'on' if request.blueprint == 'clients' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-7h6v7"/></svg>
+        Clients
+      </a>
+      {% endif %}
+      {% if has_permission('campaigns.manage') %}
+      <a href="{{ url_for('campaigns.list_campaigns') }}" class="{{ 'on' if request.blueprint == 'campaigns' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/></svg>
+        Campaigns
+      </a>
+      {% endif %}
+      {% if has_permission('reviews.manage') %}
+      <a href="{{ url_for('admin.review_queue') }}" class="{{ 'on' if request.endpoint == 'admin.review_queue' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Review
+      </a>
+      {% endif %}
+      {% if has_permission('payouts.manage') %}
+      <a href="{{ url_for('admin.payouts_queue') }}" class="{{ 'on' if request.endpoint == 'admin.payouts_queue' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Payouts
+      </a>
+      {% endif %}
+      {% if has_permission('access.manage') %}
+      <a href="{{ url_for('admin.pending_users') }}" class="{{ 'on' if request.endpoint == 'admin.pending_users' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        Access
+      </a>
+      {% endif %}
+      {% if has_permission('support.manage') %}
+      <a href="{{ url_for('admin.notifications_list') }}" class="{{ 'on' if request.endpoint and 'notification' in request.endpoint }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        Notify
+      </a>
+      <a href="{{ url_for('admin.feedback_list') }}" class="{{ 'on' if request.endpoint == 'admin.feedback_list' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Inbox
+      </a>
+      {% endif %}
+      {% if has_permission('staff.manage') %}
+      <a href="{{ url_for('admin.staff_list') }}" class="{{ 'on' if request.endpoint and 'staff' in request.endpoint }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Staff
+      </a>
+      {% endif %}
+      <a href="{{ url_for('auth.logout') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+        Logout
+      </a>
+    </nav>
+
+    {% elif session.get('client_id') %}
+    <nav class="tabbar" style="position:static;background:none;border:none;padding:0;">
+      <a href="{{ url_for('client_portal.dashboard') }}" class="{{ 'on' if request.endpoint == 'client_portal.dashboard' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      <a href="{{ url_for('client_portal.notifications') }}" class="{{ 'on' if request.endpoint == 'client_portal.notifications' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        Notify{% if unread_notification_count %}<span class="points-chip" style="padding:.05rem .4rem; margin-left:.2rem;">{{ unread_notification_count }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('client_portal.feedback') }}" class="{{ 'on' if request.endpoint == 'client_portal.feedback' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Feedback
+      </a>
+      <a href="{{ url_for('client_portal.logout') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+        Logout
+      </a>
+    </nav>
+
+    {% elif session.user_id %}
+    <nav class="tabbar" style="position:static;background:none;border:none;padding:0;">
+      <a href="{{ url_for('tasks.bounty_board') }}" class="{{ 'on' if request.endpoint == 'tasks.bounty_board' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Board
+      </a>
+      <a href="{{ url_for('tasks.browse_campaigns') }}" class="{{ 'on' if request.endpoint == 'tasks.browse_campaigns' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-2 6-6 2 2-6z"/></svg>
+        Browse
+      </a>
+      <a href="{{ url_for('tasks.user_ledger') }}" class="{{ 'on' if request.endpoint == 'tasks.user_ledger' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/></svg>
+        Ledger
+      </a>
+      <a href="{{ url_for('tasks.leaderboard') }}" class="{{ 'on' if request.endpoint == 'tasks.leaderboard' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M6 3h12l-1 8a5 5 0 01-10 0L6 3z"/></svg>
+        Ranks
+      </a>
+      <a href="{{ url_for('tasks.notifications') }}" class="{{ 'on' if request.endpoint == 'tasks.notifications' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        Notify{% if unread_notification_count %}<span class="points-chip" style="padding:.05rem .4rem; margin-left:.2rem;">{{ unread_notification_count }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('tasks.feedback') }}" class="{{ 'on' if request.endpoint == 'tasks.feedback' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Feedback
+      </a>
+      <a href="{{ url_for('tasks.profile') }}" class="{{ 'on' if request.endpoint == 'tasks.profile' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        Profile
+      </a>
+      <a href="{{ url_for('auth.logout') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+        Logout
+      </a>
+    </nav>
+    {% endif %}
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flashes">
+        {% for category, message in messages %}
+          <li class="flash {{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</div>
+</body>
+</html>

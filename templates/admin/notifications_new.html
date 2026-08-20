@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Compose Notification — Waypoint{% endblock %}
+{% block content %}
+<a href="{{ url_for('admin.notifications_list') }}" style="color:var(--amber); font-size:.85rem; text-decoration:none;">&larr; Notifications</a>
+<h2>Compose a notification</h2>
+
+<div class="card" style="max-width:560px;">
+  <form method="POST" action="{{ url_for('admin.new_notification') }}" id="notifyForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>Title</label>
+      <input type="text" name="title" required>
+    </div>
+    <div class="field">
+      <label>Message</label>
+      <textarea name="body" required></textarea>
+    </div>
+    <div class="field">
+      <label>Audience</label>
+      <select name="audience_type" id="audienceType" required>
+        <option value="all">All users (testers + clients)</option>
+        <option value="all_testers">All testers</option>
+        <option value="specific_tester">Specific tester</option>
+        <option value="campaign_testers">Testers in one active campaign</option>
+        <option value="all_clients">All clients</option>
+        <option value="specific_client">Specific client</option>
+      </select>
+    </div>
+
+    <div class="field" id="campaignField" style="display:none;">
+      <label>Campaign</label>
+      <select name="campaign_id">
+        {% for c in campaigns %}
+        <option value="{{ c.id }}">{{ c.name }} ({{ c.client.company_name }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field" id="testerField" style="display:none;">
+      <label>Tester</label>
+      <select name="target_user_id">
+        {% for t in testers %}
+        <option value="{{ t.id }}">@{{ t.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field" id="clientField" style="display:none;">
+      <label>Client</label>
+      <select name="target_client_id">
+        {% for c in clients %}
+        <option value="{{ c.id }}">{{ c.company_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">Send</button>
+  </form>
+</div>
+
+<script>
+  const audienceSelect = document.getElementById('audienceType');
+  const campaignField = document.getElementById('campaignField');
+  const testerField = document.getElementById('testerField');
+  const clientField = document.getElementById('clientField');
+
+  function updateFields() {
+    campaignField.style.display = audienceSelect.value === 'campaign_testers' ? 'block' : 'none';
+    testerField.style.display = audienceSelect.value === 'specific_tester' ? 'block' : 'none';
+    clientField.style.display = audienceSelect.value === 'specific_client' ? 'block' : 'none';
+  }
+  audienceSelect.addEventListener('change', updateFields);
+  updateFields();
+</script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Submit Proof — Waypoint{% endblock %}
+{% block content %}
+<div class="card" style="max-width:500px; margin:0 auto;">
+  <h2>Submit your proof</h2>
+  <p style="font-size:.85rem; color:var(--paper-dim);">Mission: <strong>{{ submission.task.title }}</strong></p>
+  <div class="stamp danger" style="display:block; text-align:center; margin:1rem 0; font-size:.72rem;">
+    Deadline: {{ submission.expires_at.strftime('%Y-%m-%d %H:%M') }} UTC
+  </div>
+  <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>Screenshot proof (up to {{ max_files }} images)</label>
+      <input type="file" name="screenshots" accept="image/png,image/jpeg,image/gif,image/webp" multiple required>
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <textarea name="notes" placeholder="Device, browser, anything the reviewer should know."></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Upload &amp; submit</button>
+  </form>
+  <a href="{{ url_for('tasks.bounty_board') }}" class="btn btn-outline btn-block" style="margin-top:1rem;">Back to board</a>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Browse Campaigns — Waypoint{% endblock %}
+{% block content %}
+<h2>Open campaigns</h2>
+<div class="card-grid two">
+  {% for c in joinable %}
+  <div class="card">
+    <div style="font-size:.72rem; color:var(--slate); text-transform:uppercase; letter-spacing:.06em;">{{ c.client.company_name }}</div>
+    <h3 style="margin:.15rem 0 .6rem;">{{ c.name }}</h3>
+    <span class="stamp {{ c.status|lower }}">{{ c.status }}</span>
+    <form action="{{ url_for('tasks.join_campaign', campaign_id=c.id) }}" method="POST" style="margin-top:.9rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-primary btn-block">Join campaign</button>
+    </form>
+  </div>
+  {% else %}
+  <p class="empty-state">No open campaigns right now — check back soon.</p>
+  {% endfor %}
+</div>
+
+{% if joined %}
+<p class="section-label">Already joined</p>
+<div class="card-grid two">
+  {% for c in joined %}
+  <div class="card">
+    <div style="font-size:.72rem; color:var(--slate); text-transform:uppercase; letter-spacing:.06em;">{{ c.client.company_name }}</div>
+    <h3 style="margin:.15rem 0 .6rem;">{{ c.name }}</h3>
+    <span class="stamp {{ c.status|lower }}">{{ c.status }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
