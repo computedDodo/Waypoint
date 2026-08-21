@@ -7,3 +7,5 @@ python-dotenv==1.0.1
 PyMySQL==1.1.1
 # Only needed if DB_ENGINE=postgres in your .env — safe to leave installed either way
 psycopg2-binary==2.9.9
+gunicorn==21.2.0
+
