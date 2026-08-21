@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+{% block title %}Guidance & Policies — Waypoint{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ip-doc-section{ padding: 2.4rem 0; scroll-margin-top: 5.5rem; border-bottom:1px solid var(--ink-softer); }
+  .ip-doc-section:last-of-type{ border-bottom:none; }
+  .ip-doc-section h2{ font-size:1.4rem; margin-bottom:.3rem; }
+  .ip-doc-section h3{ font-size:1.02rem; margin:1.3rem 0 .4rem; color:var(--paper); }
+  .ip-doc-section p, .ip-doc-section li{ font-size:.9rem; color:var(--paper-dim); line-height:1.65; }
+  .ip-doc-section ul, .ip-doc-section ol{ padding-left:1.3rem; margin:.6rem 0; }
+  .ip-doc-section li{ margin-bottom:.4rem; }
+  .ip-kicker{ font-size:.72rem; text-transform:uppercase; letter-spacing:.09em; color:var(--amber); font-weight:600; margin-bottom:.3rem; }
+
+  /* table of contents — horizontal scrollable chip strip, works at every width */
+  .ip-toc-wrap{ position: sticky; top:0; z-index:30; background:var(--ink); padding:.7rem 0; margin-bottom: 1rem; border-bottom:1px solid var(--ink-softer); }
+  .ip-toc{ display:flex; gap:.5rem; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:.3rem; }
+  .ip-toc a{
+    flex:0 0 auto; font-size:.76rem; font-weight:600; color:var(--paper-dim); text-decoration:none;
+    background:var(--ink-soft); border:1px solid var(--ink-softer); padding:.45rem .85rem; border-radius:20px; white-space:nowrap;
+  }
+  .ip-toc a:hover{ border-color:var(--amber); color:var(--amber); }
+
+  /* numbered step list (reuses the same visual language as index.html) */
+  .ip-steps{ list-style:none; padding:0; margin:1rem 0 1.4rem; counter-reset: ip-step; }
+  .ip-steps li{ display:flex; gap:.8rem; align-items:flex-start; margin-bottom:1rem; }
+  .ip-steps li::before{
+    counter-increment: ip-step; content: counter(ip-step);
+    flex-shrink:0; width:26px; height:26px; border-radius:50%; background:rgba(242,169,59,0.15);
+    color:var(--amber); font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:.8rem;
+    display:flex; align-items:center; justify-content:center; margin-top:.1rem;
+  }
+  .ip-steps li strong{ color:var(--paper); display:block; margin-bottom:.15rem; font-size:.92rem; }
+
+  /* glossary */
+  .ip-glossary dt{ font-family:'IBM Plex Mono',monospace; color:var(--amber); font-weight:600; font-size:.88rem; margin-top:1rem; }
+  .ip-glossary dd{ margin:.3rem 0 0; font-size:.88rem; color:var(--paper-dim); line-height:1.6; }
+
+  /* FAQ accordion — native <details>/<summary>, zero JS, fully accessible */
+  .ip-faq details{ background:var(--ink-soft); border:1px solid var(--ink-softer); border-radius:12px; padding:.9rem 1.1rem; margin-bottom:.7rem; }
+  .ip-faq summary{ cursor:pointer; font-weight:600; font-size:.9rem; color:var(--paper); list-style:none; display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+  .ip-faq summary::-webkit-details-marker{ display:none; }
+  .ip-faq summary::after{ content:'+'; font-size:1.2rem; color:var(--amber); flex-shrink:0; }
+  .ip-faq details[open] summary::after{ content:'\2212'; }
+  .ip-faq details p{ margin:.7rem 0 0; }
+
+  .ip-note{ background:rgba(242,169,59,0.08); border:1px solid rgba(242,169,59,0.25); border-radius:10px; padding:.8rem 1rem; font-size:.85rem; color:var(--paper-dim); margin:1rem 0; }
+
+  .ip-footer{ margin-top:2rem; padding-top:2rem; border-top:1px solid var(--ink-softer); text-align:center; font-size:.8rem; color:var(--slate); }
+  .ip-footer a{ color:var(--slate); text-decoration:none; }
+  .ip-footer a:hover{ color:var(--amber); }
+  .ip-footer .ip-footer-links a{ margin:0 .5rem; }
+
+  @media (min-width: 700px){
+    .ip-doc-section h2{ font-size:1.7rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('main.index') }}" style="color:var(--amber); font-size:.85rem; text-decoration:none;">&larr; Back to home</a>
+<h1 style="margin:.8rem 0 .3rem;">Guidance &amp; Policies</h1>
+<p style="color:var(--paper-dim); font-size:.9rem; margin:0 0 1rem;">Everything about how Waypoint works, what we expect from you, and what you can expect from us.</p>
+
+<div class="ip-toc-wrap">
+  <nav class="ip-toc">
+    <a href="#how-it-works-detailed">How it works</a>
+    <a href="#guidance">Guidance</a>
+    <a href="#uat">What is UAT?</a>
+    <a href="#ethics">Ethics</a>
+    <a href="#security">Security</a>
+    <a href="#privacy">Privacy</a>
+    <a href="#terms">Terms of Use</a>
+    <a href="#copyright">Copyright</a>
+    <a href="#faq">FAQ</a>
+    <a href="#glossary">Glossary</a>
+  </nav>
+</div>
+
+<!-- ================= HOW IT WORKS, DETAILED ================= -->
+<section id="how-it-works-detailed" class="ip-doc-section">
+  <div class="ip-kicker">Getting started</div>
+  <h2>How Waypoint works, step by step</h2>
+
+  <h3>If you're a tester</h3>
+  <ol class="ip-steps">
+    <li><strong>Register.</strong> Pick a username, add your email and date of birth (so we don't miss your birthday), and set a password.</li>
+    <li><strong>Verify your email.</strong> You'll get a 6-digit code, a verification link, or both — whichever arrives, use it within 15 minutes.</li>
+    <li><strong>Wait for approval.</strong> An admin reviews new accounts before you can claim missions. This usually doesn't take long.</li>
+    <li><strong>Browse campaigns.</strong> Once active, head to the Browse tab and join any campaign that's open for enrollment.</li>
+    <li><strong>Claim a mission.</strong> Pick a mission from your board. The moment you claim it, the countdown starts and it's locked to you — nobody else can take it while you're working it.</li>
+    <li><strong>Submit your proof.</strong> Follow the mission's instructions exactly, take clear screenshots (up to five), add notes about your device/browser, and submit before time runs out.</li>
+    <li><strong>Get reviewed.</strong> An admin approves or rejects your submission. Approved means points in your wallet immediately. Rejected means you get exactly one retry, at a shorter time limit.</li>
+    <li><strong>Redeem your points.</strong> From your wallet, request a payout by PayPal, bank transfer, or gift card. An admin marks it paid.</li>
+  </ol>
+
+  <h3>If you're a client</h3>
+  <ol class="ip-steps">
+    <li><strong>Reach out.</strong> Tell us about your app, what you need tested, and your timeline.</li>
+    <li><strong>We scope a campaign.</strong> Together we set a points budget, a payout rate, and the platform(s) involved.</li>
+    <li><strong>We add you to the portal.</strong> You'll get an email invite to set your own password.</li>
+    <li><strong>Missions go live.</strong> We publish specific testing missions under your campaign, and testers start claiming them.</li>
+    <li><strong>Track progress live.</strong> Your client dashboard shows enrolled testers, mission status, and results in real time — no need to ask us for updates.</li>
+    <li><strong>Wrap up and export.</strong> When the campaign ends, download a full record — every submission, every screenshot — as a single file.</li>
+  </ol>
+
+  <div class="ip-note">Not sure which side you're on? You can only be one at a time — testers and clients use separate logins for a reason: your testing account and your business account should never share credentials.</div>
+</section>
+
+<!-- ================= GUIDANCE ================= -->
+<section id="guidance" class="ip-doc-section">
+  <div class="ip-kicker">Best practice</div>
+  <h2>Guidance for testers</h2>
+  <ul>
+    <li><strong>Read the whole mission before claiming it.</strong> The clock starts the moment you claim — don't spend your time limit figuring out what's being asked.</li>
+    <li><strong>Screenshots should show the actual proof, not just the app open.</strong> If a mission asks you to trigger an error, the screenshot needs to show the error.</li>
+    <li><strong>Use the notes field.</strong> Mention your device, OS version, browser, and anything unusual you noticed. Reviewers approve faster when context is clear.</li>
+    <li><strong>If you're rejected, read the feedback before retrying.</strong> You only get one retry per mission, at half the original time — make it count.</li>
+    <li><strong>Don't sit on a mission you don't plan to finish.</strong> It's locked to you the whole time you hold it, which means nobody else can attempt it either.</li>
+    <li><strong>Keep client software confidential.</strong> What you test isn't public yet — treat it that way.</li>
+  </ul>
+</section>
+
+<!-- ================= UAT ================= -->
+<section id="uat" class="ip-doc-section">
+  <div class="ip-kicker">Context</div>
+  <h2>What is UAT, and where does Waypoint fit in?</h2>
+  <p>
+    <strong>User Acceptance Testing (UAT)</strong> is the stage of software testing where real people — not
+    just the engineering team — check whether a product actually works the way it's supposed to, from
+    a genuine user's point of view. It's less about finding stack traces and more about answering a
+    simple question: <em>does this do what it's meant to do, for someone who isn't the person who built it?</em>
+  </p>
+  <p>
+    That's exactly the gap Waypoint fills. Instead of a client relying on a handful of internal testers,
+    a campaign puts a mission in front of a pool of independent testers on their own real devices, with
+    clear pass/fail requirements (their <a href="#glossary">Definition of Done</a>) attached to each one.
+    The result looks a lot like formal UAT — structured missions, documented proof, a clear approve/reject
+    outcome — but running continuously, at whatever scale a campaign needs.
+  </p>
+</section>
+
+<!-- ================= ETHICS ================= -->
+<section id="ethics" class="ip-doc-section">
+  <div class="ip-kicker">Fair use</div>
+  <h2>Usage ethics</h2>
+  <ul>
+    <li>Submit only genuine proof from work you actually did. Fabricated or reused screenshots get accounts suspended.</li>
+    <li>One account per person. Multiple accounts to claim more missions than you can honestly complete isn't allowed.</li>
+    <li>Don't automate claiming or submitting missions. Every mission should be worked by an actual human being.</li>
+    <li>Don't share, publish, or redistribute a client's unreleased software, screenshots, or campaign details outside the platform.</li>
+    <li>If you find a serious bug while testing, report it through the mission — don't exploit it.</li>
+    <li>Treat other testers fairly: claim what you intend to finish, and let missions go if you can't.</li>
+  </ul>
+</section>
+
+<!-- ================= SECURITY ================= -->
+<section id="security" class="ip-doc-section">
+  <div class="ip-kicker">Trust</div>
+  <h2>Security</h2>
+  <ul>
+    <li><strong>Passwords</strong> are hashed before storage — nobody at Waypoint, including admins, can see your actual password.</li>
+    <li><strong>Proof screenshots</strong> are retained until the campaign they belong to ends, then removed from our servers after being exported for the client's records.</li>
+    <li><strong>Staff access is role-based.</strong> Not every staff member can see everything — a Reviewer can't touch payouts, Finance can't review submissions, and so on.</li>
+    <li><strong>Payout details</strong> (PayPal email, bank info) are only used to process the specific redemption request you submitted them for.</li>
+    <li><strong>Found a vulnerability?</strong> Report it through the Feedback tab rather than testing it against live accounts — we'll follow up directly.</li>
+    <li>Always access Waypoint over a secure (HTTPS) connection where available, and never reuse your Waypoint password anywhere else.</li>
+  </ul>
+</section>
+
+<!-- ================= PRIVACY ================= -->
+<section id="privacy" class="ip-doc-section">
+  <div class="ip-kicker">Legal</div>
+  <h2>Privacy Policy</h2>
+  <h3>What we collect</h3>
+  <ul>
+    <li>Account details: username, email, date of birth.</li>
+    <li>Mission proof: screenshots and notes you submit for review.</li>
+    <li>Payout details you provide when requesting a redemption (e.g. PayPal email).</li>
+    <li>Basic usage data needed to run the platform (login sessions, timestamps on submissions and reviews).</li>
+  </ul>
+  <h3>How we use it</h3>
+  <ul>
+    <li>To verify your account and let you sign in.</li>
+    <li>To review your mission submissions and award points fairly.</li>
+    <li>To process payout requests.</li>
+    <li>To send you notifications relevant to you — mission updates, deadline alerts, and (with your date of birth) a birthday message.</li>
+  </ul>
+  <h3>How long we keep it</h3>
+  <p>Proof screenshots are kept until the campaign they belong to ends, then removed. Account data is kept while your account is active. You can request account deletion at any time through the Feedback tab.</p>
+  <h3>Who sees it</h3>
+  <p>Clients only see aggregate campaign results and the proof relevant to their own campaigns — never your personal contact details. We don't sell your data to anyone, and we don't share it outside Waypoint except as needed to run the platform (e.g. sending you email).</p>
+</section>
+
+<!-- ================= TERMS ================= -->
+<section id="terms" class="ip-doc-section">
+  <div class="ip-kicker">Legal</div>
+  <h2>Terms of Use</h2>
+  <ul>
+    <li>You're responsible for keeping your account credentials secure and for all activity under your account.</li>
+    <li>Points are an in-platform balance, not currency — they're redeemable for cash at the rate published at the time of redemption, which may change over time.</li>
+    <li>We may suspend or terminate any account for fraud, fabricated proof, abuse, or breach of confidentiality.</li>
+    <li>We make a good-faith effort to keep campaigns and payouts flowing, but we don't guarantee a minimum amount of missions will be available at any given time, or a fixed payout turnaround.</li>
+    <li>Software you test through Waypoint remains the property of the client running that campaign — you're granted access only for the purpose of testing it.</li>
+    <li>Waypoint is provided "as is." We work hard to keep it reliable, but we can't guarantee it will be error-free or uninterrupted.</li>
+    <li>These terms may be updated as the platform grows. Continued use after an update means you accept the current version.</li>
+  </ul>
+  <p style="font-size:.78rem; color:var(--slate); margin-top:1rem;">This is a plain-language summary, not a substitute for formal legal advice specific to your situation.</p>
+</section>
+
+<!-- ================= COPYRIGHT ================= -->
+<section id="copyright" class="ip-doc-section">
+  <div class="ip-kicker">Legal</div>
+  <h2>Copyright &amp; Disclaimer</h2>
+  <p>The Waypoint name, design, and platform content are the property of Waypoint. Software and materials submitted for testing remain the property of the client running that campaign, and testers are granted no rights to them beyond what's needed to complete a mission. All trademarks referenced belong to their respective owners.</p>
+  <p>Waypoint is offered "as is," without warranty of any kind, express or implied, to the fullest extent permitted by law.</p>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section id="faq" class="ip-doc-section">
+  <div class="ip-kicker">Questions</div>
+  <h2>Frequently asked questions</h2>
+  <div class="ip-faq">
+    <details>
+      <summary>How do I actually get paid?</summary>
+      <p>Once you have wallet points, go to Redeem, choose how many points to cash out and your payout method (PayPal, bank transfer, or gift card), and submit. An admin marks it paid once processed.</p>
+    </details>
+    <details>
+      <summary>How long does a review take?</summary>
+      <p>It depends on the reviewer's queue, but points land in your wallet the moment a submission is approved — there's no extra waiting after that.</p>
+    </details>
+    <details>
+      <summary>What happens if I miss my deadline?</summary>
+      <p>An unsubmitted claim expires automatically and the mission opens back up — to you or anyone else enrolled in that campaign.</p>
+    </details>
+    <details>
+      <summary>My proof got rejected. What now?</summary>
+      <p>You get one retry, at half the original time limit, and it's still exclusively yours until you use it. Read the admin's feedback first — it tells you what was missing.</p>
+    </details>
+    <details>
+      <summary>Can I work more than one campaign at a time?</summary>
+      <p>Yes — you can be enrolled in as many campaigns as you like. You just can't have more than one mission actively claimed at once.</p>
+    </details>
+    <details>
+      <summary>Is my payout information safe?</summary>
+      <p>Yes. It's used only to process the specific redemption request you submitted it for, and it's never shared with clients.</p>
+    </details>
+    <details>
+      <summary>Do clients see my personal details?</summary>
+      <p>No. Clients see campaign results and proof relevant to their own campaign — not your email, payout details, or account info.</p>
+    </details>
+    <details>
+      <summary>How do I become a client?</summary>
+      <p>Reach out through the <a href="{{ url_for('main.index') }}#contact">Contact section</a> on the home page and tell us about your app — we'll scope a campaign together.</p>
+    </details>
+    <details>
+      <summary>Something's wrong or I have a suggestion — who do I tell?</summary>
+      <p>Use the Feedback tab once you're signed in (testers and clients both have one), or email us directly from the Contact section.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ================= GLOSSARY ================= -->
+<section id="glossary" class="ip-doc-section">
+  <div class="ip-kicker">Speak Waypoint</div>
+  <h2>Glossary</h2>
+  <dl class="ip-glossary">
+    <dt>Campaign</dt>
+    <dd>One client's testing engagement — has its own missions, budget, payout rate, and lifecycle (Draft, Recruiting, Active, Review, Paid Out, Suspended, Cancelled, or Archived).</dd>
+
+    <dt>Task / Mission</dt>
+    <dd>A single testing job within a campaign — what you claim, attempt, and submit proof for.</dd>
+
+    <dt>Requirements</dt>
+    <dd>The specific instructions a mission gives you — what to do, and what your proof needs to show.</dd>
+
+    <dt>DoD (Definition of Done)</dt>
+    <dd>The exact criteria your submitted proof has to meet for a mission to be approved. If your proof doesn't clearly satisfy the mission's requirements, it doesn't meet the DoD, and it'll be rejected.</dd>
+
+    <dt>Enrollment</dt>
+    <dd>Joining a campaign. You can't claim a campaign's missions until you're enrolled in it.</dd>
+
+    <dt>Points</dt>
+    <dd>What you earn for each approved mission — tracked per campaign and added to your overall wallet.</dd>
+
+    <dt>Wallet</dt>
+    <dd>Your total redeemable point balance across every campaign you've worked.</dd>
+
+    <dt>Redemption</dt>
+    <dd>Requesting to cash out wallet points for real money, at the current payout rate.</dd>
+
+    <dt>Retry</dt>
+    <dd>The one extra attempt you get on a mission after a rejection, at a shorter time limit than the original claim.</dd>
+
+    <dt>Leaderboard</dt>
+    <dd>A campaign's ranking of enrolled testers by points earned in that specific campaign.</dd>
+
+    <dt>Stamp</dt>
+    <dd>The small colored status label you'll see everywhere — on missions, campaigns, submissions, and payouts (e.g. "Active," "Pending," "Rejected").</dd>
+
+    <dt>Client</dt>
+    <dd>The company or person who commissioned a campaign. Clients have their own portal login, separate from tester accounts.</dd>
+
+    <dt>Admin / Reviewer / Finance / Support</dt>
+    <dd>The four staff roles behind the scenes. Admin can do everything; Reviewer only reviews submissions; Finance only handles payouts; Support handles account approvals, notifications, and the feedback inbox.</dd>
+
+    <dt>Proof</dt>
+    <dd>The screenshots and notes you submit to show you completed a mission's requirements.</dd>
+
+    <dt>UAT (User Acceptance Testing)</dt>
+    <dd>Testing done by real end users, not the engineering team, to confirm software works as intended. See the <a href="#uat">full explanation above</a>.</dd>
+  </dl>
+</section>
+
+<footer class="ip-footer">
+  <p><a href="{{ url_for('main.index') }}">&larr; Back to home</a></p>
+  <p>&copy; {{ current_year }} Waypoint. All rights reserved.</p>
+  <p>Powered by <a href="https://grade6ix-tech-s.vercel.app" target="_blank" rel="noopener">GRADE6IX Tech Solutions</a></p>
+</footer>
+{% endblock %}

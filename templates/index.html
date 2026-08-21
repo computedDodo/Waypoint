@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+{% block title %}Waypoint — Beta testing operations, dispatched{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ip-section{ padding: 3rem 0; scroll-margin-top: 1rem; }
+  .ip-section h2{ font-size:1.5rem; margin-bottom:.5rem; }
+  .ip-section > p.ip-lead{ color:var(--paper-dim); font-size:.95rem; max-width:560px; margin:0 0 1.8rem; }
+  .ip-center{ text-align:center; }
+
+  /* audience / step cards */
+  .ip-steps{ list-style:none; padding:0; margin:1rem 0 1.4rem; counter-reset: ip-step; }
+  .ip-steps li{ display:flex; gap:.8rem; align-items:flex-start; margin-bottom:.9rem; font-size:.88rem; color:var(--paper-dim); }
+  .ip-steps li::before{
+    counter-increment: ip-step; content: counter(ip-step);
+    flex-shrink:0; width:26px; height:26px; border-radius:50%; background:rgba(242,169,59,0.15);
+    color:var(--amber); font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:.8rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* CTA band */
+  .ip-cta-band{
+    text-align:center; background:linear-gradient(135deg, rgba(242,169,59,0.12), rgba(79,178,134,0.08));
+    border:1px solid var(--ink-softer); border-radius:20px; padding:2.5rem 1.5rem; margin:1rem 0;
+  }
+  .ip-cta-band p{ color:var(--paper-dim); max-width:480px; margin:.6rem auto 1.4rem; font-size:.92rem; }
+  .btn-row{ display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+
+  /* carousel */
+  .ip-carousel{ display:flex; align-items:center; gap:.6rem; max-width:640px; margin:0 auto; }
+  .ip-car-viewport{ overflow:hidden; flex:1; touch-action: pan-y; }
+  .ip-car-track{ display:flex; transition: transform .35s ease; }
+  .ip-car-slide{ flex:0 0 100%; padding:.2rem; box-sizing:border-box; }
+  .ip-review-card{ min-height:150px; display:flex; flex-direction:column; justify-content:center; }
+  .ip-review-stars{ color:var(--amber); font-size:1.1rem; letter-spacing:.15rem; margin-bottom:.6rem; }
+  .ip-review-author{ margin-top:.9rem; font-size:.8rem; color:var(--slate); }
+  .ip-review-author span{ color:var(--paper-dim); }
+  .ip-car-arrow{
+    flex-shrink:0; width:40px; height:40px; border-radius:50%; border:1px solid var(--ink-softer);
+    background:var(--ink-soft); color:var(--paper); font-size:1.1rem; cursor:pointer;
+  }
+  .ip-car-arrow:hover{ border-color:var(--amber); color:var(--amber); }
+  .ip-car-dots{ display:flex; justify-content:center; gap:.4rem; margin-top:1rem; }
+  .ip-car-dot{ width:8px; height:8px; border-radius:50%; background:var(--ink-softer); border:none; padding:0; cursor:pointer; }
+  .ip-car-dot.on{ background:var(--amber); width:20px; border-radius:4px; transition: width .2s; }
+
+  /* review form */
+  .ip-review-form-wrap{ text-align:center; margin-top:2rem; }
+  .ip-review-form-wrap summary{ list-style:none; }
+  .ip-review-form-wrap summary::-webkit-details-marker{ display:none; }
+  .ip-review-form-wrap form{ text-align:left; }
+  .ip-star-input{ display:flex; gap:.3rem; }
+  .ip-star-btn{ background:none; border:none; font-size:1.6rem; color:var(--ink-softer); cursor:pointer; padding:0; line-height:1; }
+  .ip-star-btn.on{ color:var(--amber); }
+  .ip-hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+
+  .ip-contact-grid .card p{ font-size:.85rem; color:var(--paper-dim); line-height:1.6; }
+  .ip-contact-grid .card a{ color:var(--amber); text-decoration:none; }
+
+  .ip-footer{ margin-top:3rem; padding-top:2rem; border-top:1px solid var(--ink-softer); text-align:center; font-size:.8rem; color:var(--slate); }
+  .ip-footer a{ color:var(--slate); text-decoration:none; }
+  .ip-footer a:hover{ color:var(--amber); }
+  .ip-footer .ip-footer-links{ margin-bottom:.8rem; }
+  .ip-footer .ip-footer-links a{ margin:0 .5rem; }
+
+  @media (min-width: 700px){
+    .ip-section h2{ font-size:1.9rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ================= HERO ================= -->
+<div class="auth-wrap" style="min-height:auto; padding: 2.5rem 0 1rem;">
+  <div style="max-width:560px; margin:0 auto; text-align:center;">
+    <h1 style="font-size:2.3rem; margin-bottom:.6rem;">Beta testing operations, dispatched.</h1>
+    <p style="color:var(--paper-dim); line-height:1.6; margin-bottom:1.8rem;">
+      Waypoint runs paid beta-testing campaigns for any client app — recruiting real testers,
+      dispatching timed missions, reviewing proof, and paying out points — entirely separate
+      from the app being tested. Your product's server never touches ours.
+    </p>
+    <div class="btn-row">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Join as a Tester</a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline">Sign In</a>
+    </div>
+    <p style="margin-top:1.3rem; font-size:.82rem;">
+      <a href="{{ url_for('client_portal.login') }}" style="color:var(--slate); text-decoration:none;">Client? Sign in to your portal &rarr;</a>
+    </p>
+  </div>
+</div>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section id="how-it-works" class="ip-section">
+  <div class="ip-center">
+    <h2>How Waypoint works</h2>
+    <p class="ip-lead" style="margin-left:auto; margin-right:auto;">Two sides, one platform — testers get paid missions, clients get real results.</p>
+  </div>
+
+  <div class="card-grid two">
+    <div class="card">
+      <h3 style="margin-top:0;">For Testers</h3>
+      <ol class="ip-steps">
+        <li>Register and verify your email</li>
+        <li>Get approved by an admin</li>
+        <li>Browse and join open campaigns</li>
+        <li>Claim a mission and submit proof before time runs out</li>
+        <li>Earn points, then redeem them for cash</li>
+      </ol>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Join as a Tester</a>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">For Clients</h3>
+      <ol class="ip-steps">
+        <li>Reach out and tell us about your app</li>
+        <li>We scope a campaign and a testing budget together</li>
+        <li>Real testers pick up missions and work them</li>
+        <li>Watch progress live from your client dashboard</li>
+        <li>Export a full report — data and screenshots — once it wraps</li>
+      </ol>
+      <a href="#contact" class="btn btn-outline">Start a Campaign</a>
+    </div>
+  </div>
+
+  <p class="ip-center" style="margin-top:1.5rem;">
+    <a href="{{ url_for('main.info') }}#how-it-works-detailed" style="color:var(--amber); text-decoration:none; font-size:.88rem;">
+      See the full step-by-step guide, glossary, and FAQs &rarr;
+    </a>
+  </p>
+</section>
+
+<!-- ================= CTA BAND ================= -->
+<section id="get-started" class="ip-section">
+  <div class="ip-cta-band">
+    <h2 style="margin:0;">Ready to get started?</h2>
+    <p>Whether you're here to earn or here to test your product, it takes less than a minute to get moving.</p>
+    <div class="btn-row">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Join the Beta</a>
+      <a href="#contact" class="btn btn-outline">Talk to Us About a Campaign</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= REVIEWS ================= -->
+<section id="reviews" class="ip-section">
+  <div class="ip-center">
+    <h2>What people are saying</h2>
+    <p class="ip-lead" style="margin-left:auto; margin-right:auto;">Swipe on mobile, or use the arrows — one voice at a time.</p>
+  </div>
+
+  <div class="ip-carousel" id="reviewCarousel">
+    <button class="ip-car-arrow" id="carPrev" aria-label="Previous review">&#8592;</button>
+    <div class="ip-car-viewport" id="carViewport">
+      <div class="ip-car-track" id="carTrack">
+        <div class="ip-car-slide"><p class="empty-state">Loading reviews&hellip;</p></div>
+      </div>
+    </div>
+    <button class="ip-car-arrow" id="carNext" aria-label="Next review">&#8594;</button>
+  </div>
+  <div class="ip-car-dots" id="carDots"></div>
+
+  <details class="ip-review-form-wrap">
+    <summary class="btn btn-outline" style="display:inline-flex; cursor:pointer;">Leave a review</summary>
+    <form id="reviewForm" class="card" style="max-width:480px; margin:1.2rem auto 0;">
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="rvName" required maxlength="60" placeholder="How should we credit you?">
+      </div>
+      <div class="field">
+        <label>I am a...</label>
+        <select id="rvRole">
+          <option>Tester</option>
+          <option>Client</option>
+          <option>Visitor</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Rating</label>
+        <div class="ip-star-input" id="rvStars"></div>
+      </div>
+      <div class="field">
+        <label>Your review</label>
+        <textarea id="rvMessage" required maxlength="500" placeholder="Tell us about your experience."></textarea>
+      </div>
+      <input type="text" id="rvWebsite" class="ip-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button type="submit" class="btn btn-primary btn-block">Submit review</button>
+      <p id="rvStatus" style="font-size:.8rem; margin-top:.7rem;"></p>
+    </form>
+  </details>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section id="contact" class="ip-section">
+  <div class="ip-center">
+    <h2>Get in touch</h2>
+    <p class="ip-lead" style="margin-left:auto; margin-right:auto;">Reach us directly, or check the full guidance page first — most questions are already answered there.</p>
+  </div>
+  <div class="card-grid two ip-contact-grid">
+    <div class="card">
+      <h3 style="margin-top:0;">Testers</h3>
+      <p>Questions about missions, payouts, or your account? Once you're signed in, use the in-app <strong>Feedback</strong> tab — it reaches admin directly. You can also email us.</p>
+      <p><a href="mailto:hello@waypoint.app">hello@waypoint.app</a></p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Clients</h3>
+      <p>Have an app that needs real testers on real devices? Tell us about it and we'll scope a campaign together.</p>
+      <p><a href="mailto:clients@waypoint.app">clients@waypoint.app</a></p>
+    </div>
+  </div>
+</section>
+
+<footer class="ip-footer">
+  <div class="ip-footer-links">
+    <a href="{{ url_for('main.info') }}#privacy">Privacy</a>&middot;
+    <a href="{{ url_for('main.info') }}#terms">Terms</a>&middot;
+    <a href="{{ url_for('main.info') }}#security">Security</a>&middot;
+    <a href="{{ url_for('main.info') }}#faq">FAQ</a>&middot;
+    <a href="{{ url_for('main.info') }}#glossary">Glossary</a>
+  </div>
+  <p>&copy; {{ current_year }} Waypoint. All rights reserved.</p>
+  <p>Powered by <a href="https://grade6ix-tech-s.vercel.app" target="_blank" rel="noopener">GRADE6IX Tech Solutions</a></p>
+</footer>
+
+<script>
+(function(){
+  var track = document.getElementById('carTrack');
+  var dotsWrap = document.getElementById('carDots');
+  var prevBtn = document.getElementById('carPrev');
+  var nextBtn = document.getElementById('carNext');
+  var reviews = [];
+  var index = 0;
+
+  function escapeHtml(str){
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function renderSlides(){
+    track.innerHTML = '';
+    dotsWrap.innerHTML = '';
+    if(!reviews.length){
+      track.innerHTML = '<div class="ip-car-slide"><div class="card ip-review-card"><p class="empty-state" style="padding:0;">No reviews yet — be the first to leave one!</p></div></div>';
+      return;
+    }
+    reviews.forEach(function(r, i){
+      var stars = '\u2605'.repeat(r.rating || 0) + '\u2606'.repeat(5 - (r.rating || 0));
+      var slide = document.createElement('div');
+      slide.className = 'ip-car-slide';
+      slide.innerHTML =
+        '<div class="card ip-review-card">' +
+          '<div class="ip-review-stars">' + stars + '</div>' +
+          '<p class="preserve-lines" style="font-size:.92rem; color:var(--paper-dim); margin:0;">' + escapeHtml(r.message) + '</p>' +
+          '<div class="ip-review-author">&mdash; ' + escapeHtml(r.name) + ', <span>' + escapeHtml(r.role || 'Waypoint user') + '</span></div>' +
+        '</div>';
+      track.appendChild(slide);
+
+      var dot = document.createElement('button');
+      dot.className = 'ip-car-dot' + (i === 0 ? ' on' : '');
+      dot.setAttribute('aria-label', 'Go to review ' + (i + 1));
+      dot.addEventListener('click', function(){ goTo(i); });
+      dotsWrap.appendChild(dot);
+    });
+    update();
+  }
+
+  function update(){
+    track.style.transform = 'translateX(-' + (index * 100) + '%)';
+    Array.prototype.forEach.call(dotsWrap.children, function(d, i){ d.classList.toggle('on', i === index); });
+  }
+
+  function goTo(i){
+    if(!reviews.length) return;
+    index = (i + reviews.length) % reviews.length;
+    update();
+  }
+
+  prevBtn.addEventListener('click', function(){ goTo(index - 1); });
+  nextBtn.addEventListener('click', function(){ goTo(index + 1); });
+
+  var startX = null;
+  var viewport = document.getElementById('carViewport');
+  viewport.addEventListener('touchstart', function(e){ startX = e.touches[0].clientX; }, {passive:true});
+  viewport.addEventListener('touchend', function(e){
+    if(startX === null) return;
+    var dx = e.changedTouches[0].clientX - startX;
+    if(Math.abs(dx) > 40){ dx > 0 ? goTo(index - 1) : goTo(index + 1); }
+    startX = null;
+  });
+
+  fetch('/api/reviews').then(function(r){ return r.json(); }).then(function(data){
+    reviews = data || []; renderSlides();
+  }).catch(function(){
+    track.innerHTML = '<div class="ip-car-slide"><p class="empty-state">Couldn\u2019t load reviews right now.</p></div>';
+  });
+
+  // review form
+  var form = document.getElementById('reviewForm');
+  var starsWrap = document.getElementById('rvStars');
+  var selectedRating = 0;
+  for(var i = 1; i <= 5; i++){
+    (function(n){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ip-star-btn';
+      b.textContent = '\u2605';
+      b.setAttribute('aria-label', n + ' star' + (n > 1 ? 's' : ''));
+      b.addEventListener('click', function(){ selectedRating = n; updateStars(); });
+      starsWrap.appendChild(b);
+    })(i);
+  }
+  function updateStars(){
+    Array.prototype.forEach.call(starsWrap.children, function(b, i){ b.classList.toggle('on', i < selectedRating); });
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var status = document.getElementById('rvStatus');
+    if(selectedRating < 1){
+      status.textContent = 'Please select a star rating.';
+      status.style.color = 'var(--redline)';
+      return;
+    }
+    status.textContent = 'Sending\u2026';
+    status.style.color = 'var(--slate)';
+
+    fetch('/api/reviews', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        name: document.getElementById('rvName').value,
+        role: document.getElementById('rvRole').value,
+        rating: selectedRating,
+        message: document.getElementById('rvMessage').value,
+        website: document.getElementById('rvWebsite').value
+      })
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if(data.ok){
+        status.textContent = 'Thank you! Your review is live.';
+        status.style.color = 'var(--teal)';
+        form.reset();
+        selectedRating = 0;
+        updateStars();
+        fetch('/api/reviews').then(function(r){ return r.json(); }).then(function(d){
+          reviews = d || []; index = 0; renderSlides();
+        });
+      } else {
+        status.textContent = data.error || 'Something went wrong.';
+        status.style.color = 'var(--redline)';
+      }
+    }).catch(function(){
+      status.textContent = 'Network error \u2014 please try again.';
+      status.style.color = 'var(--redline)';
+    });
+  });
+})();
+</script>
+{% endblock %}
