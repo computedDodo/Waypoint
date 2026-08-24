@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Waypoint{% endblock %}
+{% block brand_tag %}operator console{% endblock %}
+{% block content %}
+<div class="stat-row">
+  <div class="stat"><div class="num">{{ active_campaigns }}</div><div class="lbl">Active campaigns</div></div>
+  <div class="stat"><div class="num">{{ recruiting_campaigns }}</div><div class="lbl">Recruiting</div></div>
+  <div class="stat"><div class="num">{{ pending_reviews }}</div><div class="lbl">Awaiting review</div></div>
+  <div class="stat"><div class="num">{{ pending_payouts }}</div><div class="lbl">Payout requests</div></div>
+</div>
+
+<div class="card-grid two">
+  {% if has_permission('clients.manage') %}
+  <a href="{{ url_for('clients.list_clients') }}" class="card" style="text-decoration:none;">
+    <h3>Clients</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">Manage the companies commissioning your campaigns.</p>
+  </a>
+  {% endif %}
+  {% if has_permission('campaigns.manage') %}
+  <a href="{{ url_for('campaigns.list_campaigns') }}" class="card" style="text-decoration:none;">
+    <h3>Campaigns</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">Create campaigns, publish missions, track progress.</p>
+  </a>
+  <a href="{{ url_for('admin.promo_settings') }}" class="card" style="text-decoration:none;">
+    <h3>Promo Season {% if promo_active %}<span class="stamp active">Live</span>{% else %}<span class="stamp draft">Off</span>{% endif %}</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">One-click toggle for the site-wide free campaign banner.</p>
+  </a>
+  {% endif %}
+  {% if has_permission('reviews.manage') %}
+  <a href="{{ url_for('admin.review_queue') }}" class="card" style="text-decoration:none;">
+    <h3>Review queue {% if pending_reviews > 0 %}<span class="points-chip">{{ pending_reviews }}</span>{% endif %}</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">Verify screenshots and award points.</p>
+  </a>
+  {% endif %}
+  {% if has_permission('payouts.manage') %}
+  <a href="{{ url_for('admin.payouts_queue') }}" class="card" style="text-decoration:none;">
+    <h3>Payouts {% if pending_payouts > 0 %}<span class="points-chip">{{ pending_payouts }}</span>{% endif %}</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">Mark redemption requests paid or deny with a refund.</p>
+  </a>
+  {% endif %}
+  {% if has_permission('access.manage') %}
+  <a href="{{ url_for('admin.pending_users') }}" class="card" style="text-decoration:none;">
+    <h3>Access control {% if pending_users > 0 %}<span class="points-chip">{{ pending_users }}</span>{% endif %}</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">Approve or reject new testers.</p>
+  </a>
+  {% endif %}
+  {% if has_permission('payouts.manage') or has_permission('reviews.manage') %}
+  <a href="{{ url_for('admin.master_ledger') }}" class="card" style="text-decoration:none;">
+    <h3>Master ledger</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">Audit every approved payout across every campaign.</p>
+  </a>
+  {% endif %}
+  {% if has_permission('support.manage') %}
+  <a href="{{ url_for('admin.notifications_list') }}" class="card" style="text-decoration:none;">
+    <h3>Notifications</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">Message testers or clients, or check what's gone out automatically.</p>
+  </a>
+  <a href="{{ url_for('admin.feedback_list') }}" class="card" style="text-decoration:none;">
+    <h3>Feedback inbox {% if open_feedback > 0 %}<span class="points-chip">{{ open_feedback }}</span>{% endif %}</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">Messages from testers and clients.</p>
+  </a>
+  {% endif %}
+  {% if has_permission('staff.manage') %}
+  <a href="{{ url_for('admin.staff_list') }}" class="card" style="text-decoration:none;">
+    <h3>Staff</h3>
+    <p style="color:var(--paper-dim); font-size:.85rem;">Invite Reviewers, Finance, or Support accounts.</p>
+  </a>
+  {% endif %}
+</div>
+{% endblock %}

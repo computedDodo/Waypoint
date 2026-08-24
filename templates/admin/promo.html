@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Promo Season — Waypoint{% endblock %}
+{% block content %}
+<h2>Promo Season</h2>
+
+<div class="card" style="max-width:520px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
+    <div>
+      <strong>Status</strong>
+      <div style="margin-top:.4rem;">
+        {% if is_live %}<span class="stamp active">Live</span>
+        {% elif config.active %}<span class="stamp expired">On, but past deadline</span>
+        {% else %}<span class="stamp draft">Off</span>{% endif %}
+      </div>
+    </div>
+    <form action="{{ url_for('admin.promo_toggle') }}" method="POST" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn {{ 'btn-danger' if config.active else 'btn-primary' }}">
+        {{ 'Turn OFF' if config.active else 'Turn ON' }}
+      </button>
+    </form>
+  </div>
+  {% if config.active and not is_live %}
+  <p style="font-size:.8rem; color:var(--redline); margin-top:.9rem;">
+    The switch is ON but the deadline below has passed, so the banner isn't showing to anyone anymore.
+    Push the deadline out if you want to relaunch it.
+  </p>
+  {% endif %}
+  <p style="font-size:.78rem; color:var(--slate); margin-top:.9rem;">
+    This only controls the site-wide banner. It doesn't touch any campaigns, points, or accounts.
+  </p>
+</div>
+
+<div class="card" style="max-width:520px;">
+  <h3 style="margin-top:0;">Details</h3>
+  <form action="{{ url_for('admin.promo_update') }}" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>Deadline</label>
+      <input type="date" name="deadline" value="{{ config.deadline or '' }}">
+      <p style="font-size:.75rem; color:var(--slate); margin-top:.4rem;">
+        The banner auto-hides itself the day after this date, even if nobody remembers to flip the switch.
+      </p>
+    </div>
+    <div class="field">
+      <label>Points pool (shown to testers)</label>
+      <input type="number" name="points_pool" min="0" value="{{ config.points_pool }}">
+    </div>
+    <div class="field">
+      <label>Sponsor credit</label>
+      <input type="text" name="sponsor" value="{{ config.sponsor }}">
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Save details</button>
+  </form>
+</div>
+{% endblock %}
