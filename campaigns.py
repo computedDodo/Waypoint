@@ -112,14 +112,88 @@ def update_status(campaign_id):
 @permission_required('campaigns.manage')
 def new_task(campaign_id):
     campaign = Campaign.query.get_or_404(campaign_id)
+
     title = request.form.get('title', '').strip()
     description = request.form.get('description', '').strip()
-    base_points = request.form.get('base_points', type=int)
-    time_limit = request.form.get('time_limit_minutes', type=int)
+
+    base_points = request.form.get(
+        'base_points',
+        type=int
+    )
+
+    time_limit = request.form.get(
+        'time_limit_minutes',
+        type=int
+    )
+
+    prerequisite_task_id = request.form.get(
+        'prerequisite_task_id',
+        type=int
+    )
 
     if not title or not description or not base_points or not time_limit:
-        flash('All mission fields are required.', 'danger')
-        return redirect(url_for('campaigns.view_campaign', campaign_id=campaign.id))
+        flash(
+            'All mission fields are required.',
+            'danger'
+        )
+
+        return redirect(
+            url_for(
+                'campaigns.view_campaign',
+                campaign_id=campaign.id
+            )
+        )
+
+    if base_points < 1:
+        flash(
+            'Base points must be at least 1.',
+            'danger'
+        )
+
+        return redirect(
+            url_for(
+                'campaigns.view_campaign',
+                campaign_id=campaign.id
+            )
+        )
+
+    if time_limit < 1:
+        flash(
+            'Time limit must be at least 1 minute.',
+            'danger'
+        )
+
+        return redirect(
+            url_for(
+                'campaigns.view_campaign',
+                campaign_id=campaign.id
+            )
+        )
+
+    # ---------------------------------------------------------
+    # VALIDATE PREREQUISITE
+    # ---------------------------------------------------------
+
+    prerequisite_task = None
+
+    if prerequisite_task_id:
+        prerequisite_task = Task.query.filter_by(
+            id=prerequisite_task_id,
+            campaign_id=campaign.id
+        ).first()
+
+        if not prerequisite_task:
+            flash(
+                'The selected prerequisite is not part of this campaign.',
+                'danger'
+            )
+
+            return redirect(
+                url_for(
+                    'campaigns.view_campaign',
+                    campaign_id=campaign.id
+                )
+            )
 
     task = Task(
         campaign_id=campaign.id,
@@ -127,23 +201,49 @@ def new_task(campaign_id):
         description=description,
         base_points=base_points,
         time_limit_minutes=time_limit,
+        prerequisite_task_id=(
+            prerequisite_task.id
+            if prerequisite_task
+            else None
+        ),
     )
+
     db.session.add(task)
     db.session.commit()
-    flash(f'Mission "{title}" added to {campaign.name}.', 'success')
+
+    flash(
+        f'Mission "{title}" added to {campaign.name}.',
+        'success'
+    )
 
     if campaign.status == 'Active':
+        dependency_text = ''
+
+        if prerequisite_task:
+            dependency_text = (
+                f' Complete "{prerequisite_task.title}" first.'
+            )
+
         create_notification(
             title=f'New mission on {campaign.name}',
-            body=f'"{title}" just went live — {base_points} PTS, {time_limit} min limit.',
+            body=(
+                f'"{title}" just went live — '
+                f'{base_points} PTS, '
+                f'{time_limit} min limit.'
+                f'{dependency_text}'
+            ),
             audience_type='campaign_testers',
             campaign_id=campaign.id,
             is_automated=True,
             automation_key=f'new-task:{task.id}',
         )
 
-    return redirect(url_for('campaigns.view_campaign', campaign_id=campaign.id))
-
+    return redirect(
+        url_for(
+            'campaigns.view_campaign',
+            campaign_id=campaign.id
+        )
+    )
 
 @campaigns_bp.route('/tasks/<int:task_id>/toggle', methods=['POST'])
 @permission_required('campaigns.manage')
