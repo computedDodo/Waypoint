@@ -195,13 +195,12 @@ def bounty_board():
     board = []
 
     for campaign in campaigns:
-
-    visible_tasks = []
+        visible_tasks = []
 
     # Oldest task first.
     #
     # Hidden tasks are removed before they reach the board.
-    tasks = (
+        tasks = (
         campaign.tasks
         .filter_by(is_active=True)
         .order_by(
