@@ -63,7 +63,7 @@ def new_campaign():
 @permission_required('campaigns.manage')
 def view_campaign(campaign_id):
     campaign = Campaign.query.get_or_404(campaign_id)
-    tasks = campaign.tasks.order_by(Task.created_at.desc()).all()
+    tasks = campaign.tasks.order_by(Task.created_at.asc(), Task.id.asc()).all()
     enrolled_count = campaign.enrollments.count()
     proof_file_count = sum(sub.files.count() for sub in
                             Submission.query.join(Task).filter(Task.campaign_id == campaign.id).all())
