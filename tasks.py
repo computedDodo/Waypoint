@@ -107,6 +107,54 @@ def task_availability(task, viewer_id=None):
     return ('open', None)
 
 
+def task_dependency_status(task):
+    """
+    Returns information about whether a task's prerequisite has
+    been completed.
+
+    Returns:
+
+        {
+            'blocked': bool,
+            'prerequisite': Task | None,
+            'reason': str | None
+        }
+
+    A prerequisite is considered satisfied only when it has an
+    Approved submission.
+    """
+
+    prerequisite = task.prerequisite_task
+
+    if prerequisite is None:
+        return {
+            'blocked': False,
+            'prerequisite': None,
+            'reason': None,
+        }
+
+    completed_submission = (
+        prerequisite.submissions
+        .filter_by(status='Approved')
+        .first()
+    )
+
+    if completed_submission:
+        return {
+            'blocked': False,
+            'prerequisite': prerequisite,
+            'reason': None,
+        }
+
+    return {
+        'blocked': True,
+        'prerequisite': prerequisite,
+        'reason': (
+            f'Complete "{prerequisite.title}" first.'
+        ),
+    }
+
+
 @tasks_bp.route('/board')
 @login_required
 @active_tester_required
@@ -147,42 +195,52 @@ def bounty_board():
     board = []
 
     for campaign in campaigns:
-        visible_tasks = []
 
-        # IMPORTANT:
-        # Tasks are deliberately ordered oldest-first.
-        #
-        # is_active=True excludes hidden/inactive tasks before they
-        # reach the board.
-        #
-        # created_at ASC:
-        #     oldest task appears first
-        #
-        # id ASC:
-        #     deterministic tie-breaker when two tasks have the same
-        #     created_at timestamp.
-        #
-        # We intentionally do NOT use DESC here.
-        tasks = (
-            campaign.tasks
-            .filter_by(is_active=True)
-            .order_by(
-                Task.created_at.asc(),
-                Task.id.asc(),
-            )
-            .all()
+    visible_tasks = []
+
+    # Oldest task first.
+    #
+    # Hidden tasks are removed before they reach the board.
+    tasks = (
+        campaign.tasks
+        .filter_by(is_active=True)
+        .order_by(
+            Task.created_at.asc(),
+            Task.id.asc()
+        )
+        .all()
+    )
+
+    for task in tasks:
+
+        state, holder_id = task_availability(
+            task,
+            user.id
         )
 
-        for task in tasks:
-            state, holder_id = task_availability(task, user.id)
+        dependency = task_dependency_status(task)
 
-            if state == 'open':
-                visible_tasks.append({
-                    'task': task,
-                    'retry': False,
-                })
+        # -----------------------------------------------------
+        # COMPLETED TASKS
+        # -----------------------------------------------------
 
-            elif state == 'retry' and holder_id == user.id:
+        if state == 'done':
+            continue
+
+        # -----------------------------------------------------
+        # CURRENTLY CLAIMED / SUBMITTED BY SOMEONE ELSE
+        # -----------------------------------------------------
+
+        if state == 'locked':
+            continue
+
+        # -----------------------------------------------------
+        # RETRY
+        # -----------------------------------------------------
+
+        if state == 'retry':
+
+            if holder_id == user.id:
                 retry_minutes = max(
                     5,
                     task.time_limit_minutes // 2
@@ -192,13 +250,30 @@ def bounty_board():
                     'task': task,
                     'retry': True,
                     'retry_minutes': retry_minutes,
+                    'blocked': dependency['blocked'],
+                    'prerequisite': dependency['prerequisite'],
                 })
 
-            # 'locked' and 'done', and 'retry' held by someone else,
-            # stay hidden.
+            continue
 
-        if visible_tasks:
-            board.append((campaign, visible_tasks))
+        # -----------------------------------------------------
+        # OPEN TASK
+        # -----------------------------------------------------
+
+        visible_tasks.append({
+            'task': task,
+            'retry': False,
+            'blocked': dependency['blocked'],
+            'prerequisite': dependency['prerequisite'],
+        })
+
+    if visible_tasks:
+        board.append(
+            (
+                campaign,
+                visible_tasks
+            )
+        )
 
     return render_template(
         'tasks/board.html',
@@ -313,6 +388,20 @@ def claim_task(task_id):
             'This mission is no longer available.',
             'warning'
         )
+        return redirect(url_for('tasks.bounty_board'))
+
+        # ---------------------------------------------------------
+    # DEPENDENCY ENFORCEMENT
+    # ---------------------------------------------------------
+
+    dependency = task_dependency_status(task)
+
+    if dependency['blocked']:
+        flash(
+            dependency['reason'],
+            'warning'
+        )
+
         return redirect(url_for('tasks.bounty_board'))
 
     state, holder_id = task_availability(task, user.id)
