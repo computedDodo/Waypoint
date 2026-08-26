@@ -68,9 +68,11 @@
 No prerequisite — can be claimed immediately
 </option>
 {% for prerequisite in tasks %}
+  {% if prerequisite.is_active %}
 <option value="{{ prerequisite.id }}">
 {{ prerequisite.title }}
 </option>
+      {% endif %}
 {% endfor %}
 </select>
 <div style="font-size:.75rem; color:var(--slate); margin-top:.35rem;">
@@ -92,6 +94,16 @@ If selected, testers must successfully complete this mission before this mission
     <span class="points-chip">{{ task.base_points }} PTS</span>
   </div>
   <p class="preserve-lines" style="font-size:.85rem; color:var(--paper-dim); margin:.6rem 0;">{{ task.description }}</p>
+  {% if task.prerequisite_task %}
+
+<div style="margin:.6rem 0; padding:.55rem .7rem; border-left:3px solid var(--amber); background:rgba(242,169,59,.06); font-size:.78rem;">
+<strong>🔒 Depends on:</strong>
+{{ task.prerequisite_task.title }}
+</div>
+{% else %}
+<div style="margin:.6rem 0; font-size:.75rem; color:var(--slate);">
+No prerequisite</div>
+{% endif %}
   <div style="display:flex; justify-content:space-between; align-items:center;">
     {% if is_completed %}
       <span class="stamp approved">Completed &middot; @{{ is_completed.tester.username }}</span>
