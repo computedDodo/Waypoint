@@ -136,23 +136,24 @@ def new_task(campaign_id):
             'All mission fields are required.',
             'danger'
         )
+    
     prerequisite_task = None
 
-if prerequisite_task_id:
+    if prerequisite_task_id:
 
-    prerequisite_task = Task.query.filter_by(
-        id=prerequisite_task_id,
-        campaign_id=campaign.id
-    ).first()
+        prerequisite_task = Task.query.filter_by(
+            id=prerequisite_task_id,
+            campaign_id=campaign.id
+        ).first()
 
-    if not prerequisite_task:
+        if not prerequisite_task:
 
-        flash(
-            'Invalid prerequisite mission selected.',
-            'danger'
-        )
+            flash(
+                'Invalid prerequisite mission selected.',
+                'danger'
+            )
 
-        return redirect(url_for('campaigns.view_campaign', campaign_id=campaign.id))
+            return redirect(url_for('campaigns.view_campaign', campaign_id=campaign.id))
 
     if base_points < 1:
         flash(
@@ -295,3 +296,4 @@ def purge_proofs(campaign_id):
     db.session.commit()
     flash(f'Purged {removed} screenshot file(s) for {campaign.name}. Points and history stay intact.', 'success')
     return redirect(url_for('campaigns.view_campaign', campaign_id=campaign.id))
+            
