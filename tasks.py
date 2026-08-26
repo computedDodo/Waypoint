@@ -197,82 +197,81 @@ def bounty_board():
     for campaign in campaigns:
         visible_tasks = []
 
-    # Oldest task first.
-    #
-    # Hidden tasks are removed before they reach the board.
+        # Oldest task first.
+        #
+        # Hidden tasks are removed before they reach the board.
         tasks = (
-        campaign.tasks
-        .filter_by(is_active=True)
-        .order_by(
-            Task.created_at.asc(),
-            Task.id.asc()
-        )
-        .all()
-    )
-
-    for task in tasks:
-
-        state, holder_id = task_availability(
-            task,
-            user.id
-        )
-
-        dependency = task_dependency_status(task)
-
-        # -----------------------------------------------------
-        # COMPLETED TASKS
-        # -----------------------------------------------------
-
-        if state == 'done':
-            continue
-
-        # -----------------------------------------------------
-        # CURRENTLY CLAIMED / SUBMITTED BY SOMEONE ELSE
-        # -----------------------------------------------------
-
-        if state == 'locked':
-            continue
-
-        # -----------------------------------------------------
-        # RETRY
-        # -----------------------------------------------------
-
-        if state == 'retry':
-
-            if holder_id == user.id:
-                retry_minutes = max(
-                    5,
-                    task.time_limit_minutes // 2
-                )
-
-                visible_tasks.append({
-                    'task': task,
-                    'retry': True,
-                    'retry_minutes': retry_minutes,
-                    'blocked': dependency['blocked'],
-                    'prerequisite': dependency['prerequisite'],
-                })
-
-            continue
-
-        # -----------------------------------------------------
-        # OPEN TASK
-        # -----------------------------------------------------
-
-        visible_tasks.append({
-            'task': task,
-            'retry': False,
-            'blocked': dependency['blocked'],
-            'prerequisite': dependency['prerequisite'],
-        })
-
-    if visible_tasks:
-        board.append(
-            (
-                campaign,
-                visible_tasks
+            campaign.tasks
+            .filter_by(is_active=True)
+            .order_by(
+                Task.created_at.asc(),
+                Task.id.asc()
             )
+            .all()
         )
+
+        for task in tasks:
+            state, holder_id = task_availability(
+                task,
+                user.id
+            )
+
+            dependency = task_dependency_status(task)
+
+            # -----------------------------------------------------
+            # COMPLETED TASKS
+            # -----------------------------------------------------
+
+            if state == 'done':
+                continue
+
+            # -----------------------------------------------------
+            # CURRENTLY CLAIMED / SUBMITTED BY SOMEONE ELSE
+            # -----------------------------------------------------
+
+            if state == 'locked':
+                continue
+
+            # -----------------------------------------------------
+            # RETRY
+            # -----------------------------------------------------
+
+            if state == 'retry':
+
+                if holder_id == user.id:
+                    retry_minutes = max(
+                        5,
+                        task.time_limit_minutes // 2
+                    )
+
+                    visible_tasks.append({
+                        'task': task,
+                        'retry': True,
+                        'retry_minutes': retry_minutes,
+                        'blocked': dependency['blocked'],
+                        'prerequisite': dependency['prerequisite'],
+                    })
+
+                continue
+
+            # -----------------------------------------------------
+            # OPEN TASK
+            # -----------------------------------------------------
+
+            visible_tasks.append({
+                'task': task,
+                'retry': False,
+                'blocked': dependency['blocked'],
+                'prerequisite': dependency['prerequisite'],
+            })
+
+        if visible_tasks:
+            board.append(
+                (
+                    campaign,
+                    visible_tasks
+                )
+            )
 
     return render_template(
         'tasks/board.html',
@@ -389,7 +388,7 @@ def claim_task(task_id):
         )
         return redirect(url_for('tasks.bounty_board'))
 
-        # ---------------------------------------------------------
+    # ---------------------------------------------------------
     # DEPENDENCY ENFORCEMENT
     # ---------------------------------------------------------
 
@@ -787,11 +786,7 @@ def notifications():
 
     return render_template(
         'tasks/notifications.html',
-        items=items
-    )
-
-
-@tasks_bp.route('/feedback', methods=['GET', 'POST'])
+        items=items@tasks_bp.route('/feedback', methods=['GET', 'POST'])
 @login_required
 def feedback():
     user = User.query.get(session['user_id'])
@@ -884,4 +879,7 @@ def profile():
         'tasks/profile.html',
         user=user
     )
-  
+    )
+
+
+ 
