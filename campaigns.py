@@ -136,13 +136,23 @@ def new_task(campaign_id):
             'All mission fields are required.',
             'danger'
         )
+    prerequisite_task = None
 
-        return redirect(
-            url_for(
-                'campaigns.view_campaign',
-                campaign_id=campaign.id
-            )
+if prerequisite_task_id:
+
+    prerequisite_task = Task.query.filter_by(
+        id=prerequisite_task_id,
+        campaign_id=campaign.id
+    ).first()
+
+    if not prerequisite_task:
+
+        flash(
+            'Invalid prerequisite mission selected.',
+            'danger'
         )
+
+        return redirect(url_for('campaigns.view_campaign', campaign_id=campaign.id))
 
     if base_points < 1:
         flash(
