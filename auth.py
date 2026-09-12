@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-import random
+import logging
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session
 from flask_mail import Message
 from models import User
@@ -7,8 +7,11 @@ from app import db, mail
 from permissions import STAFF_ROLES
 
 auth_bp = Blueprint('auth', __name__)
+logger = logging.getLogger(__name__)
 
 RESET_TOKEN_MINUTES = 30
+VERIFICATION_EXPIRY_MINUTES = 15
+RESEND_COOLDOWN_SECONDS = 60  # Rate limiting: minimum seconds between resend requests
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -42,21 +45,20 @@ def register():
         new_user = User(username=username, email=email, account_status='Pending Email', date_of_birth=dob)
         new_user.set_password(password)
 
-        verification_method = random.choice(['otp', 'token', 'both'])
-        new_user.verification_expires_at = datetime.utcnow() + timedelta(minutes=15)
+        # FIXED: Always generate both OTP and token (deterministic)
+        new_user.verification_expires_at = datetime.utcnow() + timedelta(minutes=VERIFICATION_EXPIRY_MINUTES)
+
+        # Generate both credentials
+        otp_code = new_user.generate_otp()
+        token = new_user.generate_token()
 
         email_body = f"Hello {username},\n\nWelcome to Waypoint!\n\n"
-
-        if verification_method in ['otp', 'both']:
-            otp_code = new_user.generate_otp()
-            email_body += f"Your verification code is: {otp_code}\n\n"
-
-        if verification_method in ['token', 'both']:
-            token = new_user.generate_token()
-            verify_link = url_for('auth.verify_link', token=token, _external=True)
-            email_body += f"Click the link below to verify your account:\n{verify_link}\n\n"
-
-        email_body += "Note: This verification step expires in 15 minutes."
+        email_body += f"Your verification code is: {otp_code}\n\n"
+        
+        verify_link = url_for('auth.verify_link', token=token, _external=True)
+        email_body += f"Or click the link below to verify your account:\n{verify_link}\n\n"
+        
+        email_body += f"Note: This verification expires in {VERIFICATION_EXPIRY_MINUTES} minutes."
 
         db.session.add(new_user)
         db.session.commit()
@@ -67,10 +69,12 @@ def register():
             flash('Registration successful! Please check your email to verify your account.', 'success')
             return redirect(url_for('auth.verify_prompt', email=email))
         except Exception as e:
+            # FIXED: Rollback the user creation on mail failure
+            db.session.rollback()
             db.session.delete(new_user)
             db.session.commit()
+            logger.error(f"Registration email failed for {email}: {e}")
             flash('An error occurred sending the verification email. Please try again.', 'danger')
-            print(f"Mail Error: {e}")
             return redirect(url_for('auth.register'))
 
     return render_template('auth/register.html')
@@ -135,38 +139,48 @@ def verify_link(token):
     return redirect(url_for('auth.login'))
 
 
-@auth_bp.route('/resend-verification')
+@auth_bp.route('/resend-verification', methods=['POST', 'GET'])
 def resend_verification():
-    email = request.args.get('email')
+    email = request.args.get('email') or request.form.get('email')
     user = User.query.filter_by(email=email).first()
 
     if not user or user.account_status != 'Pending Email':
         flash('Invalid request.', 'danger')
         return redirect(url_for('auth.register'))
 
-    verification_method = random.choice(['otp', 'token', 'both'])
-    user.verification_expires_at = datetime.utcnow() + timedelta(minutes=15)
+    # FIXED: Rate limiting check — prevent spam
+    if user.verification_expires_at:
+        time_since_last_send = datetime.utcnow() - (user.verification_expires_at - timedelta(minutes=VERIFICATION_EXPIRY_MINUTES))
+        if time_since_last_send.total_seconds() < RESEND_COOLDOWN_SECONDS:
+            flash(f'Please wait {int(RESEND_COOLDOWN_SECONDS - time_since_last_send.total_seconds())} seconds before resending.', 'warning')
+            return redirect(url_for('auth.verify_prompt', email=email))
+
+    # FIXED: Generate new credentials but DO NOT commit yet
+    new_expiry = datetime.utcnow() + timedelta(minutes=VERIFICATION_EXPIRY_MINUTES)
+    otp_code = user.generate_otp()
+    token = user.generate_token()
+    user.verification_expires_at = new_expiry
 
     email_body = f"Hello {user.username},\n\nHere is your new verification step.\n\n"
+    email_body += f"Your verification code is: {otp_code}\n\n"
+    
+    verify_link = url_for('auth.verify_link', token=token, _external=True)
+    email_body += f"Or click the link below to verify your account:\n{verify_link}\n\n"
+    
+    email_body += f"Note: This verification expires in {VERIFICATION_EXPIRY_MINUTES} minutes."
 
-    if verification_method in ['otp', 'both']:
-        otp_code = user.generate_otp()
-        email_body += f"Your verification code is: {otp_code}\n\n"
-
-    if verification_method in ['token', 'both']:
-        token = user.generate_token()
-        verify_link = url_for('auth.verify_link', token=token, _external=True)
-        email_body += f"Click the link below to verify your account:\n{verify_link}\n\n"
-
-    email_body += "Note: This verification step expires in 15 minutes."
-
-    db.session.commit()
-
+    # FIXED: Send email BEFORE committing (safe transaction design)
     try:
         msg = Message(subject="New verification code", recipients=[email], body=email_body)
         mail.send(msg)
+        
+        # Only commit after successful mail delivery
+        db.session.commit()
         flash('A new verification step has been sent to your email.', 'success')
-    except Exception:
+    except Exception as e:
+        # FIXED: Rollback on mail failure — don't strand the account with new credentials
+        db.session.rollback()
+        logger.error(f"Resend verification email failed for {email}: {e}")
         flash('Failed to resend email. Please try again later.', 'danger')
 
     return redirect(url_for('auth.verify_prompt', email=email))
@@ -181,6 +195,15 @@ def login():
         user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
+            # IMPROVED: Validate account state BEFORE establishing session
+            if user.account_status not in ['Active', 'Pending Approval']:
+                if user.account_status == 'Pending Email':
+                    flash('Account not yet verified. Please check your email.', 'warning')
+                    return redirect(url_for('auth.verify_prompt', email=user.email))
+                else:
+                    flash(f'Account status: {user.account_status}', 'warning')
+                    return redirect(url_for('auth.login'))
+
             session['user_id'] = user.id
             session['role'] = user.role
 
@@ -231,7 +254,7 @@ def forgot_password():
             try:
                 mail.send(Message(subject="Reset your Waypoint password", recipients=[user.email], body=body))
             except Exception as e:
-                print(f"Mail Error: {e}")
+                logger.error(f"Password reset email failed for {user.email}: {e}")
 
         flash('If that account exists, a reset link has been sent to its email.', 'success')
         return redirect(url_for('auth.login'))
