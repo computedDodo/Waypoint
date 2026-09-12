@@ -1,4 +1,5 @@
 import secrets
+import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session
 from flask_mail import Message
@@ -10,8 +11,11 @@ from notifications import create_notification
 from promo import load_promo_config, save_promo_config, is_promo_live
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+logger = logging.getLogger(__name__)
 
 STAFF_CREATABLE_ROLES = ['Admin', 'Reviewer', 'Finance', 'Support']
+VERIFICATION_EXPIRY_MINUTES = 15
+STALE_ACCOUNT_MIN_AGE_HOURS = 24
 
 
 @admin_bp.route('/')
@@ -44,7 +48,69 @@ def dashboard():
 def pending_users():
     pending = User.query.filter_by(account_status='Pending Approval').all()
     stuck_email = User.query.filter_by(account_status='Pending Email').all()
-    return render_template('admin/pending_users.html', pending=pending, stuck_email=stuck_email)
+    
+    # IMPROVED: Calculate eligibility for each Pending Email user
+    eligible_for_cleanup = []
+    not_eligible_for_cleanup = []
+    
+    for user in stuck_email:
+        is_eligible, reason = _is_eligible_for_cleanup(user)
+        if is_eligible:
+            eligible_for_cleanup.append({
+                'user': user,
+                'registered': user.created_at,
+                'verification_expired': user.verification_expires_at < datetime.utcnow() if user.verification_expires_at else True,
+                'expires_at': user.verification_expires_at,
+                'reason': reason
+            })
+        else:
+            not_eligible_for_cleanup.append({
+                'user': user,
+                'registered': user.created_at,
+                'verification_expired': user.verification_expires_at < datetime.utcnow() if user.verification_expires_at else False,
+                'expires_at': user.verification_expires_at,
+                'reason': reason
+            })
+    
+    return render_template(
+        'admin/pending_users.html',
+        pending=pending,
+        stuck_email=stuck_email,
+        eligible_for_cleanup=eligible_for_cleanup,
+        not_eligible_for_cleanup=not_eligible_for_cleanup
+    )
+
+
+def _is_eligible_for_cleanup(user):
+    """
+    Determine if a Pending Email user is eligible for cleanup.
+    
+    Returns: (is_eligible, reason_string)
+    
+    Eligibility requires:
+    1. account_status == 'Pending Email'
+    2. verification window has expired
+    3. account age >= 24 hours
+    """
+    if user.account_status != 'Pending Email':
+        return False, 'Not in Pending Email status'
+    
+    now = datetime.utcnow()
+    
+    # Check if verification window has expired
+    if not user.verification_expires_at or now < user.verification_expires_at:
+        minutes_remaining = 'Unknown'
+        if user.verification_expires_at:
+            minutes_remaining = int((user.verification_expires_at - now).total_seconds() / 60)
+        return False, f'Verification window still open ({minutes_remaining} min remaining)'
+    
+    # Check if account is at least 24 hours old
+    account_age = now - user.created_at
+    if account_age < timedelta(hours=STALE_ACCOUNT_MIN_AGE_HOURS):
+        hours_remaining = int((timedelta(hours=STALE_ACCOUNT_MIN_AGE_HOURS) - account_age).total_seconds() / 3600)
+        return False, f'Account too new ({hours_remaining}h until eligible)'
+    
+    return True, 'Eligible: expired verification + 24h+ old'
 
 
 @admin_bp.route('/approve/<int:user_id>', methods=['POST'])
@@ -71,13 +137,58 @@ def reject_user(user_id):
 @admin_bp.route('/cleanup-stale-accounts', methods=['POST'])
 @permission_required('access.manage')
 def cleanup_stale():
-    threshold = datetime.utcnow() - timedelta(hours=24)
-    stale_users = User.query.filter(User.account_status == 'Pending Email', User.created_at < threshold).all()
-    count = len(stale_users)
-    for u in stale_users:
-        db.session.delete(u)
-    db.session.commit()
-    flash(f'Cleaned up {count} stale unverified accounts.', 'success')
+    """
+    IMPROVED: Manual cleanup with better eligibility rules and error handling.
+    
+    Eligibility:
+    - account_status == 'Pending Email'
+    - verification window has expired
+    - account age >= 24 hours
+    
+    Transaction handling:
+    - Query eligible users
+    - Stage deletions
+    - Commit once with rollback on failure
+    """
+    
+    try:
+        # Query eligible users
+        now = datetime.utcnow()
+        age_threshold = now - timedelta(hours=STALE_ACCOUNT_MIN_AGE_HOURS)
+        expiry_threshold = now
+        
+        stale_users = User.query.filter(
+            User.account_status == 'Pending Email',
+            User.created_at < age_threshold,
+            User.verification_expires_at < expiry_threshold
+        ).all()
+        
+        if not stale_users:
+            flash('No expired Pending Email accounts older than 24 hours were found.', 'info')
+            return redirect(url_for('admin.pending_users'))
+        
+        count = len(stale_users)
+        
+        # Stage deletions
+        for user in stale_users:
+            # Double-check account status before deletion to prevent cascading errors
+            if user.account_status != 'Pending Email':
+                logger.warning(f'Skipping user {user.id} — status changed to {user.account_status}')
+                continue
+            
+            db.session.delete(user)
+        
+        # Commit once with transaction management
+        db.session.commit()
+        flash(f'✓ Cleaned up {count} stale unverified account(s).', 'success')
+        logger.info(f'Cleanup: Deleted {count} Pending Email accounts')
+        
+    except Exception as e:
+        # IMPROVED: Rollback and report error truthfully
+        db.session.rollback()
+        logger.error(f'Cleanup failed: {e}', exc_info=True)
+        flash(f'❌ Cleanup failed. An error occurred: {str(e)[:100]}. Please check logs.', 'danger')
+    
     return redirect(url_for('admin.pending_users'))
 
 
@@ -224,7 +335,7 @@ def new_staff():
             flash(f'Invited {username} as {role}.', 'success')
         except Exception as e:
             flash(f'Account created, but the invite email failed to send. Share this link directly: {invite_link}', 'warning')
-            print(f"Mail Error: {e}")
+            logger.error(f"Staff invite email failed for {email}: {e}")
 
         return redirect(url_for('admin.staff_list'))
 
@@ -305,7 +416,7 @@ def feedback_respond(feedback_id):
             mail.send(Message(subject=f'Re: {item.subject}', recipients=[recipient_email],
                                body=f"Hi,\n\n{response}\n\n— Waypoint Support"))
         except Exception as e:
-            print(f"Mail Error: {e}")
+            logger.error(f"Feedback response email failed: {e}")
 
     flash('Response saved.', 'success')
     return redirect(url_for('admin.feedback_list'))
