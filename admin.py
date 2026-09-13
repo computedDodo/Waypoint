@@ -2,13 +2,13 @@ import secrets
 import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session
-from flask_mail import Message
 from models import (User, Task, Submission, Campaign, Enrollment, Transaction, RedemptionRequest,
                      SubmissionFile, Client, Notification, Feedback)
-from app import db, mail
+from app import db
 from permissions import staff_required, permission_required, STAFF_ROLES
 from notifications import create_notification
 from promo import load_promo_config, save_promo_config, is_promo_live
+from email_utils import send_brevo_email
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 logger = logging.getLogger(__name__)
@@ -49,7 +49,6 @@ def pending_users():
     pending = User.query.filter_by(account_status='Pending Approval').all()
     stuck_email = User.query.filter_by(account_status='Pending Email').all()
     
-    # IMPROVED: Calculate eligibility for each Pending Email user
     eligible_for_cleanup = []
     not_eligible_for_cleanup = []
     
@@ -82,29 +81,17 @@ def pending_users():
 
 
 def _is_eligible_for_cleanup(user):
-    """
-    Determine if a Pending Email user is eligible for cleanup.
-    
-    Returns: (is_eligible, reason_string)
-    
-    Eligibility requires:
-    1. account_status == 'Pending Email'
-    2. verification window has expired
-    3. account age >= 24 hours
-    """
     if user.account_status != 'Pending Email':
         return False, 'Not in Pending Email status'
     
     now = datetime.utcnow()
     
-    # Check if verification window has expired
     if not user.verification_expires_at or now < user.verification_expires_at:
         minutes_remaining = 'Unknown'
         if user.verification_expires_at:
             minutes_remaining = int((user.verification_expires_at - now).total_seconds() / 60)
         return False, f'Verification window still open ({minutes_remaining} min remaining)'
     
-    # Check if account is at least 24 hours old
     account_age = now - user.created_at
     if account_age < timedelta(hours=STALE_ACCOUNT_MIN_AGE_HOURS):
         hours_remaining = int((timedelta(hours=STALE_ACCOUNT_MIN_AGE_HOURS) - account_age).total_seconds() / 3600)
@@ -137,22 +124,7 @@ def reject_user(user_id):
 @admin_bp.route('/cleanup-stale-accounts', methods=['POST'])
 @permission_required('access.manage')
 def cleanup_stale():
-    """
-    IMPROVED: Manual cleanup with better eligibility rules and error handling.
-    
-    Eligibility:
-    - account_status == 'Pending Email'
-    - verification window has expired
-    - account age >= 24 hours
-    
-    Transaction handling:
-    - Query eligible users
-    - Stage deletions
-    - Commit once with rollback on failure
-    """
-    
     try:
-        # Query eligible users
         now = datetime.utcnow()
         age_threshold = now - timedelta(hours=STALE_ACCOUNT_MIN_AGE_HOURS)
         expiry_threshold = now
@@ -169,29 +141,23 @@ def cleanup_stale():
         
         count = len(stale_users)
         
-        # Stage deletions
         for user in stale_users:
-            # Double-check account status before deletion to prevent cascading errors
             if user.account_status != 'Pending Email':
                 logger.warning(f'Skipping user {user.id} — status changed to {user.account_status}')
                 continue
-            # Clear out associated notification records to satisfy PostgreSQL foreign key constraints
-            from models import NotificationRecipient, Notification
 
+            from models import NotificationRecipient, Notification
             NotificationRecipient.query.filter_by(user_id=user.id).delete()
             Notification.query.filter_by(target_user_id=user.id).delete()
-
-            # Now it is safe to delete the user.
+            Notification.query.filter_by(sender_staff_id=user.id).delete()
 
             db.session.delete(user)
         
-        # Commit once with transaction management
         db.session.commit()
         flash(f'✓ Cleaned up {count} stale unverified account(s).', 'success')
         logger.info(f'Cleanup: Deleted {count} Pending Email accounts')
         
     except Exception as e:
-        # IMPROVED: Rollback and report error truthfully
         db.session.rollback()
         logger.error(f'Cleanup failed: {e}', exc_info=True)
         flash(f'❌ Cleanup failed. An error occurred: {str(e)[:100]}. Please check logs.', 'danger')
@@ -223,7 +189,7 @@ def process_review(sub_id):
     if action == 'approve':
         sub.status = 'Approved'
         sub.points_awarded = task.base_points
-        task.is_active = False  # completed for good — auto-hide
+        task.is_active = False
 
         enrollment = Enrollment.query.filter_by(user_id=user.id, campaign_id=campaign.id).first()
         if not enrollment:
@@ -246,8 +212,6 @@ def process_review(sub_id):
 
     sub.admin_feedback = feedback
     sub.reviewed_at = datetime.utcnow()
-    # Screenshots stay — purged in bulk from campaigns.py once the whole
-    # campaign has ended, after an export.
     db.session.commit()
     return redirect(url_for('admin.review_queue'))
 
@@ -297,8 +261,7 @@ def resolve_payout(payout_id):
 
 
 # ==========================================
-# STAFF — invited via the same reset-password link as "forgot password",
-# just used here to let them set their first password.
+# STAFF
 # ==========================================
 @admin_bp.route('/staff')
 @permission_required('staff.manage')
@@ -326,7 +289,7 @@ def new_staff():
             return redirect(url_for('admin.new_staff'))
 
         staff_member = User(username=username, email=email, role=role, account_status='Active')
-        staff_member.set_password(secrets.token_urlsafe(24))  # placeholder — replaced via invite link
+        staff_member.set_password(secrets.token_urlsafe(24))
         token = staff_member.generate_reset_token()
         staff_member.reset_expires_at = datetime.utcnow() + timedelta(hours=48)
         db.session.add(staff_member)
@@ -338,7 +301,7 @@ def new_staff():
             f"Set your password here (link expires in 48 hours):\n{invite_link}"
         )
         try:
-            mail.send(Message(subject="You've been added to Waypoint", recipients=[email], body=body))
+            send_brevo_email(email, "You've been added to Waypoint", body)
             flash(f'Invited {username} as {role}.', 'success')
         except Exception as e:
             flash(f'Account created, but the invite email failed to send. Share this link directly: {invite_link}', 'warning')
@@ -420,8 +383,11 @@ def feedback_respond(feedback_id):
 
     if recipient_email and response:
         try:
-            mail.send(Message(subject=f'Re: {item.subject}', recipients=[recipient_email],
-                               body=f"Hi,\n\n{response}\n\n— Waypoint Support"))
+            send_brevo_email(
+                recipient_email,
+                f"Re: {item.subject}",
+                f"Hi,\n\n{response}\n\n— Waypoint Support"
+            )
         except Exception as e:
             logger.error(f"Feedback response email failed: {e}")
 
@@ -430,10 +396,7 @@ def feedback_respond(feedback_id):
 
 
 # ==========================================
-# PROMO SEASON — file-based toggle, no migration involved. Gated to
-# campaigns.manage, which in the current 4-role setup means Admin only:
-# this is a site-wide business decision, not something any staff role
-# should be able to flip casually.
+# PROMO SEASON 
 # ==========================================
 @admin_bp.route('/promo')
 @permission_required('campaigns.manage')
