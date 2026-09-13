@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_mail import Mail
 from flask_wtf import CSRFProtect
 from flask_migrate import Migrate
 from dotenv import load_dotenv
@@ -9,7 +8,6 @@ from config import Config
 load_dotenv()
 
 db = SQLAlchemy()
-mail = Mail()
 csrf = CSRFProtect()
 migrate = Migrate()
 
@@ -26,7 +24,6 @@ def create_app():
     app.config.from_object(Config)
 
     db.init_app(app)
-    mail.init_app(app)
     csrf.init_app(app)
     migrate.init_app(app, db)
 
@@ -53,10 +50,6 @@ def create_app():
 
     @app.before_request
     def _tick_automations():
-        # Cheap "lazy cron" check — see notifications.py. Only does real
-        # work once per hour; every other request just reads one row.
-        # Wrapped so a problem here (e.g. migrations not yet applied)
-        # can't take down every other page on the site.
         try:
             from notifications import run_due_automations
             run_due_automations()
