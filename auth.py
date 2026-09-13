@@ -5,6 +5,9 @@ from flask_mail import Message
 from models import User
 from app import db, mail
 from permissions import STAFF_ROLES
+import socket
+socket.setdefaulttimeout(10.0) # Force a 10-second timeout on all network calls
+
 
 auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
