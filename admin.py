@@ -175,7 +175,14 @@ def cleanup_stale():
             if user.account_status != 'Pending Email':
                 logger.warning(f'Skipping user {user.id} — status changed to {user.account_status}')
                 continue
-            
+            # Clear out associated notification records to satisfy PostgreSQL foreign key constraints
+            from models import NotificationRecipient, Notification
+
+            NotificationRecipient.query.filter_by(user_id=user.id).delete()
+            Notification.query.filter_by(target_user_id=user.id).delete()
+
+            # Now it is safe to delete the user.
+
             db.session.delete(user)
         
         # Commit once with transaction management
