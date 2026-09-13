@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, flash, redirect, url_for
-from flask_mail import Message
 from models import Client, Campaign
 from permissions import permission_required
-from app import db, mail
+from app import db
+from email_utils import send_brevo_email
 
 clients_bp = Blueprint('clients', __name__, url_prefix='/admin/clients')
 
@@ -11,8 +11,7 @@ INVITE_TOKEN_HOURS = 72
 
 
 def _send_invite(client):
-    """Emails the client a link to set their portal password. Reuses the
-    same reset-token fields Client shares the shape of with User."""
+    """Emails the client a link to set their portal password."""
     if not client.contact_email:
         return False
     token = client.generate_reset_token()
@@ -26,7 +25,7 @@ def _send_invite(client):
         f"Set your password here (link expires in {INVITE_TOKEN_HOURS} hours):\n{invite_link}"
     )
     try:
-        mail.send(Message(subject="Your Waypoint client portal access", recipients=[client.contact_email], body=body))
+        send_brevo_email(client.contact_email, "Your Waypoint client portal access", body)
         return True
     except Exception as e:
         print(f"Mail Error: {e}")
