@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session
-from flask_mail import Message
 from models import Client, Campaign, Task, Notification, NotificationRecipient, Feedback
-from app import db, mail
+from app import db
 from exports import build_campaign_export
+from email_utils import send_brevo_email
 
 client_portal_bp = Blueprint('client_portal', __name__, url_prefix='/client')
 
@@ -61,7 +61,7 @@ def forgot_password():
                 f"Click below to set a new password. It expires in {RESET_TOKEN_HOURS} hours:\n{reset_link}"
             )
             try:
-                mail.send(Message(subject="Reset your Waypoint portal password", recipients=[email], body=body))
+                send_brevo_email(email, "Reset your Waypoint portal password", body)
             except Exception as e:
                 print(f"Mail Error: {e}")
 
